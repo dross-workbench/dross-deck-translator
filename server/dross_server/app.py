@@ -71,7 +71,10 @@ def create_app(config=None, inference=None):
 
     @app.post("/v1/translate")
     async def translate(body: TranslateRequest):
-        return await inference.translate(body)
+        try:
+            return await asyncio.wait_for(inference.translate(body), timeout=config.timeout)
+        except TimeoutError:
+            raise ServiceError('inference_timeout', 'The complete translation request exceeded its time limit.', 504)
 
     @app.post('/v1/analyze')
     async def analyze(body: AnalysisRequest):

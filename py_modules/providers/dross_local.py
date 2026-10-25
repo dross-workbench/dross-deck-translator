@@ -19,6 +19,7 @@ DROSS_DEFAULTS = {
     "dross_context_lines": 3, "dross_display_mode": "english",
     "dross_mode": "translate",
     "dross_track_encounters": True,
+    "dross_poll_seconds": 15,
 }
 
 
@@ -86,15 +87,19 @@ class DrossLocalProvider(TranslationProvider):
             raw = response.read(4_000_001)
             if len(raw) > 4_000_000:
                 raise NetworkError("Workbench response exceeded the size limit.")
-            if response.status in (401, 403):
+            if response.status == 401:
                 raise ApiKeyError("Workbench rejected the pairing token.")
             if 300 <= response.status < 400:
                 raise NetworkError("Workbench redirects are refused.")
             data = json.loads(raw)
+            if not isinstance(data, dict):
+                raise NetworkError("Workbench returned an invalid response.")
             if response.status >= 400:
                 # Only protocol errors, never arbitrary response bodies, reach logs/UI.
                 code = data.get("error", "server_error")
                 messages = {"model_missing": "Configured model is not installed on Workbench.",
+                            "screenshots_disabled": "Enable optional screenshots on Workbench as well as the Deck.",
+                            "tokenizer_missing": "Run Install-Study.ps1 on Workbench and restart the gateway.",
                             "inference_timeout": "Workbench inference timed out. Try a smaller model.",
                             "model_changed": "Workbench model changed. Retry translation.",
                             "ollama_unavailable": "Start Ollama on Workbench.",
@@ -138,6 +143,7 @@ class DrossLocalProvider(TranslationProvider):
             self.last_seen = now
             texts = [r["text"] for r in regions]
             changed = texts != self.last_texts
+            newly_seen = [t for t in texts if t not in self.last_texts]
             # An unchanged screen uses its original context, so repeated captures hit cache.
             context = self.last_context if texts == self.last_texts else self.context[:]
             count = max(0, min(6, int(self.settings["dross_context_lines"])))
@@ -158,7 +164,10 @@ class DrossLocalProvider(TranslationProvider):
                         "context": context, "game_id": game_id, "model_identity": identity,
                         "source_language": "ja", "target_language": "en"})
                     items = data.get("segments", [])
-                    result = {r["id"]: r["translation"] for r in items}
+                    try:
+                        result = {r["id"]: r["translation"] for r in items}
+                    except (KeyError, TypeError):
+                        raise NetworkError("Workbench returned invalid sentence mappings.")
                     if len(items) != len(missing) or set(result) != {str(i) for i in range(len(missing))} or any(not isinstance(v, str) or not v.strip() for v in result.values()):
                         raise NetworkError("Workbench returned invalid sentence mappings.")
                     pairs = [(t, result[str(i)]) for i, t in enumerate(missing)]
@@ -182,11 +191,11 @@ class DrossLocalProvider(TranslationProvider):
                        "translatedText": r["text"] if mode == "japanese" else f"{r['text']}\n{t}" if mode == "bilingual" else t,
                        "drossFallback": fallback_used} for r, t in zip(regions, translations)]
             self.last_regions = result
-            if changed and self.settings["dross_track_encounters"]:
+            if changed and newly_seen and not fallback_used and self.settings["dross_track_encounters"]:
                 try:
                     await self.request("POST", "/v1/vocabulary/encounters", {
                         "event_id": str(uuid.uuid4()), "game_id": game_id,
-                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(texts) if t.strip()]})
+                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(newly_seen) if t.strip()]})
                 except (NetworkError, ApiKeyError):
                     # Optional history must never prevent a translated overlay.
                     pass

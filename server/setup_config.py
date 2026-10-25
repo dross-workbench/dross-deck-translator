@@ -33,7 +33,7 @@ cert = (x509.CertificateBuilder().subject_name(subject).issuer_name(subject).pub
 (folder/'server.pem').write_bytes(cert.public_bytes(serialization.Encoding.PEM))
 config.update(bind=args.bind, port=18765, ollama=str(Path(args.ollama).resolve()), models=str(Path(args.models).resolve()),
               fingerprint=cert.fingerprint(hashes.SHA256()).hex())
-config.setdefault('translation_model', 'translategemma:4b')
-config.setdefault('analysis_model', 'qwen3:1.7b')
+config.setdefault('translation_model', 'qwen3:4b')
+config.setdefault('analysis_model', 'qwen3:4b')
 config_path.write_text(json.dumps(config, indent=2))
 print('Local configuration created. Pairing details are in server/.local/config.json; keep this file private.')

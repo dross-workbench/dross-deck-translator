@@ -9,8 +9,8 @@ LOCAL_MODELS = {"translategemma:4b", "qwen3:4b", "qwen3:1.7b", "qwen3:0.6b"}
 @dataclass
 class Config:
     token: str
-    translation_model: str = "translategemma:4b"
-    analysis_model: str = "qwen3:1.7b"
+    translation_model: str = "qwen3:4b"
+    analysis_model: str = "qwen3:4b"
     data_dir: Path = Path(".local/data")
     timeout: float = 120
     keep_alive: str = "30s"
@@ -28,8 +28,8 @@ class Config:
     def from_env(cls):
         return cls(
             token=os.environ.get("DROSS_TOKEN", ""),
-            translation_model=os.environ.get("DROSS_TRANSLATION_MODEL", "translategemma:4b"),
-            analysis_model=os.environ.get("DROSS_ANALYSIS_MODEL", "qwen3:1.7b"),
+            translation_model=os.environ.get("DROSS_TRANSLATION_MODEL", "qwen3:4b"),
+            analysis_model=os.environ.get("DROSS_ANALYSIS_MODEL", "qwen3:4b"),
             data_dir=Path(os.environ.get("DROSS_DATA_DIR", ".local/data")),
             timeout=float(os.environ.get("DROSS_TIMEOUT", "120")),
             keep_alive=os.environ.get("DROSS_KEEP_ALIVE", "30s"),

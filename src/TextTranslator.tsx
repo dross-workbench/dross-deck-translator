@@ -14,6 +14,7 @@ export interface TranslatedRegion extends TextRegion {
     translatedText: string;
     englishTranslation?: string;
     drossFallback?: boolean;
+    drossLive?: boolean;
 }
 
 export class TextTranslator {

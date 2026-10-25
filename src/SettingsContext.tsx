@@ -178,6 +178,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
                 // Set provider settings for upfront API key validation
                 logic.setOcrProvider(serverSettings.ocr_provider || "chromescreenai");
                 logic.setTranslationProvider(serverSettings.translation_provider || "dross");
+                logic.setDrossMode(serverSettings.dross_mode || 'translate');
                 logic.setHasGoogleApiKey(!!serverSettings.google_api_key);
                 logic.setHasGeminiApiKey(!!serverSettings.gemini_api_key);
 

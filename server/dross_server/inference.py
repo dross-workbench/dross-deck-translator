@@ -77,6 +77,14 @@ class Ollama:
         context = request.context[-6:]
         if any(len(s) > 1500 for s in context) or sum(len(s.text) for s in request.segments) > 6000:
             raise ServiceError("text_too_long", "Reduce the amount of dialogue or context.", 422)
+        # Bound context to fit the CPU-sized 2048-token window. Keep only past text.
+        budget, bounded = 1200, []
+        for line in reversed(context):
+            if budget <= 0:
+                break
+            bounded.insert(0, line[-budget:])
+            budget -= len(line)
+        context = bounded
         if len({s.id for s in request.segments}) != len(request.segments):
             raise ServiceError("duplicate_segment", "Segment IDs must be unique.", 422)
         output, timings = [], []

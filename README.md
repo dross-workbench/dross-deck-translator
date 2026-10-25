@@ -27,11 +27,16 @@ To include a screenshot, enable **Allow saved screenshots** on the Deck, set `"a
 
 Common grammar patterns use deterministic notes. Other contextual model explanations remain experimental: the small model benchmarks produced grammatical errors. Dictionary definitions are never sourced from those explanations.
 
+## Immersion (experimental)
+
+Choose **Immersion** in Dross settings and use **Start immersion** or the translation shortcut. Close the quick-access menu before the two-second startup delay ends. A game must be running and Pause Game on Overlay must be disabled. The default is one capture every 15 seconds after the previous request finishes, configurable from 5 to 60 seconds. Identical frames skip OCR; unchanged recognized text skips translation. Translated labels appear over the live game, with the captured image hidden. Dismiss, Stop immersion, plugin disable, game exit or a request failure stops the loop. An already-running Workbench inference may finish, but its cancelled result is ignored. Polling never resumes automatically after plugin reload. Battery savings and Gaming Mode composition/input behavior are not yet measured on a Deck.
+
 ## Build and verify
 
 ```powershell
 pnpm install --frozen-lockfile
 pnpm run typecheck
+node --test tests/frontend.test.cjs
 pnpm run build
 .venv/Scripts/python.exe -m pytest -q
 .venv/Scripts/python.exe tools/package_plugin.py
@@ -39,9 +44,9 @@ pnpm run build
 
 Packaging verifies and includes the upstream Linux dependency archive, including the portable Python runtime. Windows dependencies are never put into the Deck ZIP. Initial OCR/model downloads still need internet; subsequent inference is local.
 
-Milestone 1 has passed 16 automated API/provider/cache tests and strict TypeScript validation. A real authenticated HTTPS request through the Deck-side provider produced English on Workbench, preserved its rectangle, and reused the result in 83 ms. SteamOS capture, controller behavior and overlay rendering require physical Steam Deck testing and are **not yet verified**.
+Milestones have passed automated API/provider/cache/study/history tests, frontend polling/OCR-fixture tests and strict TypeScript validation. A real authenticated HTTPS request through the Deck-side provider produced English on Workbench, preserved its rectangle, and reused the result in 83 ms. SteamOS capture, controller behavior and overlay rendering require physical Steam Deck testing and are **not yet verified**. See [TESTING.md](TESTING.md) for measured results and the exact device checklist.
 
-Workbench audit: i5-1135G7 (4 cores/8 threads), 11.8 GiB usable RAM, Intel Iris Xe integrated graphics. Ollama used CPU inference (zero VRAM offload). TranslateGemma 4B translated short synthetic dialogue in approximately 2.2–2.8 s warm; a cold request took 11.5 s. Process-tree peak working set was approximately 3.4 GiB. This is a small sample, not a full accuracy evaluation or Deck end-to-end latency. The current TranslateGemma prompt deliberately omits dialogue history; Qwen is the context-capable option. The server keeps no translation history; the plugin uses memory caching unless disk caching is enabled. Vocabulary storage is opt-in.
+Workbench audit: i5-1135G7 (4 cores/8 threads), 11.8 GiB usable RAM, Intel Iris Xe integrated graphics. Ollama used CPU inference (zero VRAM offload). Final default: **qwen3:4b for both translation and optional analysis**, so one model serves both jobs and supports recent dialogue context. Its five warm short-line requests took about 1.9–3.1 s; cold was 10.4 s, with 2.73 GiB peak process-tree working set. TranslateGemma 4B is available by setting `translation_model` in private configuration; it took 2.2–2.8 s warm, 11.5 s cold and 3.40 GiB, and its documented prompt omits history. The 0.6B model reversed a negative imperative, so it is not recommended. These are small synthetic samples, not a full accuracy evaluation or Deck end-to-end latency. The server keeps no unsaved translation history; the plugin uses memory caching unless disk caching is enabled. Vocabulary storage is opt-in.
 
 ## Upstream documentation and attribution
 

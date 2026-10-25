@@ -43,6 +43,8 @@ class VocabularyStore:
             existing = db.execute('SELECT vocabulary_id FROM encounters WHERE event_id=?', (item.event_id,)).fetchone()
             if existing and existing[0] != key:
                 raise ServiceError('event_conflict', 'This save event was already used for another word.', 409)
+            if existing:
+                return dict(db.execute('SELECT * FROM vocabulary WHERE id=?', (key,)).fetchone())
             screenshot = None
             if item.screenshot_base64:
                 try:

@@ -13,6 +13,7 @@ import logging
 import re
 import json
 import base64
+import hashlib
 import tarfile
 import shutil
 import glob
@@ -1516,6 +1517,7 @@ class Plugin:
                 "use_free_providers": self._use_free_providers,
                 "ocr_provider": self._ocr_provider,
                 "translation_provider": self._translation_provider,
+                "dross_mode": self._settings.get_setting("dross_mode", "translate"),
                 "google_api_key": self._google_vision_api_key,  # Single key for frontend
                 "google_vision_api_key": self._google_vision_api_key,
                 "google_translate_api_key": self._google_translate_api_key,
@@ -1550,6 +1552,8 @@ class Plugin:
             return {}
 
     async def get_gemini_models(self):
+        if self._settings.get_setting("dross_local_only", True):
+            return []
         try:
             if not self._gemini_api_key:
                 return []
@@ -1598,6 +1602,13 @@ class Plugin:
     async def get_dross_study_snapshot(self):
         provider = self._dross_provider()
         return {"regions": provider.last_regions, "context": provider.last_context, "game_id": provider.game_id}
+
+    async def delete_dross_screenshot(self, path):
+        candidate = Path(path).resolve()
+        if candidate.parent == Path(self._screenshotPath).resolve() and candidate.suffix == '.png':
+            candidate.unlink(missing_ok=True)
+            return True
+        return False
 
     async def analyze_dross_sentence(self, payload):
         try:
@@ -1847,7 +1858,7 @@ class Plugin:
                     continue
 
                 logger.debug(f"Screenshot saved ({size} bytes) on attempt {attempt}")
-                return {"path": screenshot_path, "base64": base64_data}
+                return {"path": screenshot_path, "base64": base64_data, "fingerprint": hashlib.sha256(base64_data.encode()).hexdigest()}
             else:
                 fw, fh = self._fallback_dims
                 expected_bytes = fw * fh * 3
@@ -1880,7 +1891,7 @@ class Plugin:
                 base64_data = base64.b64encode(png_bytes).decode("utf-8")
 
                 logger.debug(f"Screenshot saved via Pillow ({len(png_bytes)} bytes) on attempt {attempt}")
-                return {"path": screenshot_path, "base64": base64_data}
+                return {"path": screenshot_path, "base64": base64_data, "fingerprint": hashlib.sha256(base64_data.encode()).hexdigest()}
 
         logger.error(f"Screenshot capture failed after {attempt} attempt(s)")
         self._capture_backend = None
@@ -1919,7 +1930,7 @@ class Plugin:
             return {"path": "", "base64": ""}
 
         logger.debug(f"Screenshot saved via spectacle ({size} bytes)")
-        return {"path": screenshot_path, "base64": base64_data}
+        return {"path": screenshot_path, "base64": base64_data, "fingerprint": hashlib.sha256(base64_data.encode()).hexdigest()}
 
     async def _take_screenshot_portal(self, env, screenshot_path, MIN_VALID_SIZE):
         # Result arrives as a Request.Response signal; start gdbus monitor before issuing the call to avoid a race.
@@ -1994,7 +2005,7 @@ class Plugin:
                 return {"path": "", "base64": ""}
 
             logger.debug(f"Screenshot saved via portal ({size} bytes)")
-            return {"path": screenshot_path, "base64": base64_data}
+            return {"path": screenshot_path, "base64": base64_data, "fingerprint": hashlib.sha256(base64_data.encode()).hexdigest()}
 
         finally:
             try:
