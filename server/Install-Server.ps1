@@ -7,6 +7,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $venv = Join-Path $repoRoot '.venv'
+& $Python -c "import sys; assert (3,12) <= sys.version_info[:2] < (3,14), 'Use Python 3.12 or 3.13 with -Python'"
+if ($LASTEXITCODE -ne 0) { throw 'Use a Python 3.12 or 3.13 executable with -Python' }
 & $Python -m venv $venv
 if ($LASTEXITCODE -ne 0) { throw 'Python 3.12 or 3.13 is required' }
 $venvPython = Join-Path $venv 'Scripts\python.exe'

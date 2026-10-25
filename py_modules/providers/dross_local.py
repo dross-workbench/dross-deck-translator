@@ -47,7 +47,7 @@ class DrossLocalProvider(TranslationProvider):
         self.context, self.last_texts, self.last_context, self.last_regions = [], [], [], []
         self.cache.clear()
 
-    def _request(self, method, path, payload=None):
+    def _request(self, method, path, payload=None, timeout=None):
         url = urlsplit(self.settings["dross_server_url"])
         if url.username or url.password or url.query or url.fragment or url.path not in ("", "/"):
             raise NetworkError("Use only the Workbench gateway address and port.")
@@ -60,7 +60,7 @@ class DrossLocalProvider(TranslationProvider):
             raise NetworkError("Enter Workbench's private LAN IP address. Public servers and DNS names are not allowed.")
         if not self.settings["dross_token"]:
             raise ApiKeyError("Enter the Workbench pairing token in Dross settings.")
-        timeout = max(5, min(300, float(self.settings["dross_timeout"])))
+        timeout = max(0.5, min(300, float(timeout))) if timeout is not None else max(5, min(300, float(self.settings["dross_timeout"])))
         connection = None
         try:
             if url.scheme == "https":
@@ -113,8 +113,8 @@ class DrossLocalProvider(TranslationProvider):
             if connection:
                 connection.close()
 
-    async def request(self, method, path, payload=None):
-        return await asyncio.to_thread(self._request, method, path, payload)
+    async def request(self, method, path, payload=None, *, timeout=None):
+        return await asyncio.to_thread(self._request, method, path, payload, timeout)
 
     async def health(self):
         return await self.request("GET", "/health")
@@ -195,7 +195,7 @@ class DrossLocalProvider(TranslationProvider):
                 try:
                     await self.request("POST", "/v1/vocabulary/encounters", {
                         "event_id": str(uuid.uuid4()), "game_id": game_id,
-                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(newly_seen) if t.strip()]})
+                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(newly_seen) if t.strip()]}, timeout=2)
                 except (NetworkError, ApiKeyError):
                     # Optional history must never prevent a translated overlay.
                     pass

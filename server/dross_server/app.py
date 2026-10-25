@@ -116,4 +116,8 @@ def create_app(config=None, inference=None):
     async def delete_vocabulary():
         return {'deleted': await asyncio.to_thread(vocabulary.delete_all)}
 
+    @app.delete('/v1/vocabulary/{item_id}')
+    async def delete_one(item_id: str):
+        return {'deleted': await asyncio.to_thread(vocabulary.delete_one, item_id)}
+
     return app

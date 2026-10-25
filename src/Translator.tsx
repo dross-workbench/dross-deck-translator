@@ -319,7 +319,7 @@ export class GameTranslatorLogic {
 
     setDrossMode(mode: string): void {
         this.drossMode = mode;
-        if (mode !== 'immersion') this.stopImmersion();
+        if (mode !== 'immersion' && this.immersion.active) this.stopImmersion();
     }
 
     startImmersion = async (): Promise<void> => {

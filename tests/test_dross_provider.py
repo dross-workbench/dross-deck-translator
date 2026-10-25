@@ -34,7 +34,7 @@ def test_fixture_coordinates_context_cache_and_no_screenshot():
     async def run():
         p = DrossLocalProvider()
         calls = []
-        async def request(method, path, payload=None):
+        async def request(method, path, payload=None, **kwargs):
             if path == '/health':
                 return {'translation_available': True, 'model_identity': 'fixture-model'}
             if path == '/v1/vocabulary/encounters':

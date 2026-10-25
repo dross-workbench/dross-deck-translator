@@ -8,6 +8,7 @@ from PIL import Image
 from fastapi.testclient import TestClient
 from dross_server.app import create_app
 from dross_server.anki import Anki
+from dross_server.inference import ServiceError
 from dross_server.config import Config
 from dross_server.schemas import EncounterRequest
 from dross_server.study import JapaneseStudy, grammar_notes
@@ -64,6 +65,8 @@ def test_anki_loopback_escaped_fields_and_duplicate_update(tmp_path):
         actions.append(data)
         action = data['action']
         result = [] if action == 'modelNames' else notes.copy() if action == 'findNotes' else None
+        if action == 'version':
+            result = 6
         if action == 'addNote':
             notes.append(100)
             result = 100
@@ -82,3 +85,28 @@ def test_anki_loopback_escaped_fields_and_duplicate_update(tmp_path):
     assert sum(x['action'] == 'addNote' for x in actions) == 1
     assert sum(x['action'] == 'updateNoteFields' for x in actions) == 1
     assert any(x['action'] == 'storeMediaFile' for x in actions)
+
+
+@pytest.mark.parametrize('response', [[], {'result': 5, 'error': None}, {'unrelated': 'service'}])
+def test_anki_refuses_unrelated_or_incompatible_service(tmp_path, response):
+    actions = []
+    def mock(request):
+        actions.append(json.loads(request.content)['action'])
+        return httpx.Response(200, json=response)
+    async def run():
+        config = Config(token='synthetic-private-test-token-32chars', data_dir=tmp_path, anki_enabled=True)
+        with pytest.raises(ServiceError) as error:
+            await Anki(config, httpx.MockTransport(mock)).sync({})
+        assert error.value.code == 'anki_unavailable'
+    asyncio.run(run())
+    assert actions == ['version']
+
+
+def test_targeted_delete_preserves_other_words_and_media(tmp_path):
+    store = VocabularyStore(tmp_path)
+    first = store.save(item(screenshot_base64=screenshot()))
+    second = store.save(item(event_id='different-event', dictionary_form='別', screenshot_base64=screenshot()))
+    assert store.delete_one(first['id']) == 1
+    assert store.delete_one(first['id']) == 0
+    assert [word['id'] for word in store.list()] == [second['id']]
+    assert len(list((tmp_path/'screenshots').glob('*.png'))) == 1

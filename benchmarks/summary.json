@@ -1,0 +1,42 @@
+[
+  {
+    "model": "qwen3:0.6b",
+    "cold_ms": 2738,
+    "warm_median_ms": 569,
+    "warm_range_ms": [
+      538,
+      841
+    ],
+    "peak_rss_gib": 0.81
+  },
+  {
+    "model": "qwen3:1.7b",
+    "cold_ms": 5421,
+    "warm_median_ms": 1115,
+    "warm_range_ms": [
+      820,
+      1359
+    ],
+    "peak_rss_gib": 1.59
+  },
+  {
+    "model": "qwen3:4b",
+    "cold_ms": 10435,
+    "warm_median_ms": 2199,
+    "warm_range_ms": [
+      1917,
+      3062
+    ],
+    "peak_rss_gib": 2.72
+  },
+  {
+    "model": "translategemma:4b",
+    "cold_ms": 11487,
+    "warm_median_ms": 2484,
+    "warm_range_ms": [
+      2187,
+      2820
+    ],
+    "peak_rss_gib": 3.4
+  }
+]

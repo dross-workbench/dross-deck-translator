@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image
 from .inference import ServiceError
 from datetime import datetime, timezone
+from contextlib import contextmanager
 
 
 class VocabularyStore:
@@ -30,11 +31,16 @@ class VocabularyStore:
                     sentence TEXT, translation TEXT, encountered_at TEXT, screenshot TEXT);
             ''')
 
+    @contextmanager
     def connect(self):
         db = sqlite3.connect(self.path)
         db.row_factory = sqlite3.Row
         db.execute('PRAGMA foreign_keys=ON')
-        return db
+        try:
+            with db:
+                yield db
+        finally:
+            db.close()
 
     def save(self, item):
         key = hashlib.sha256(json.dumps([item.game_id, item.dictionary_form, item.reading], ensure_ascii=False).encode()).hexdigest()[:32]
@@ -94,6 +100,15 @@ class VocabularyStore:
     def set_anki_id(self, key, note_id):
         with self.connect() as db:
             db.execute('UPDATE vocabulary SET anki_id=? WHERE id=?', (note_id, key))
+
+    def delete_one(self, key):
+        with self.lock, self.connect() as db:
+            media = [r[0] for r in db.execute('SELECT screenshot FROM encounters WHERE vocabulary_id=? AND screenshot IS NOT NULL', (key,))]
+            deleted = db.execute('DELETE FROM vocabulary WHERE id=?', (key,)).rowcount
+            for name in media:
+                if len(name) == 68 and name.endswith('.png') and all(c in '0123456789abcdef' for c in name[:-4]):
+                    (self.media/name).unlink(missing_ok=True)
+            return deleted
 
     def list(self, game_id=None):
         with self.connect() as db:

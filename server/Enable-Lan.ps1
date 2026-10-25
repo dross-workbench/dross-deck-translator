@@ -5,5 +5,5 @@ if ($ip.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) { th
 $bytes = $ip.GetAddressBytes()
 if (-not ($bytes[0] -eq 10 -or ($bytes[0] -eq 172 -and $bytes[1] -ge 16 -and $bytes[1] -le 31) -or ($bytes[0] -eq 192 -and $bytes[1] -eq 168))) { throw 'Only private device addresses are allowed' }
 $config = Get-Content -LiteralPath (Join-Path $PSScriptRoot '.local/config.json') -Raw | ConvertFrom-Json
-if ($config.bind -eq '127.0.0.1') { throw 'Re-run Install-Server.ps1 with -BindAddress set to the Workbench LAN IP first' }
+if ($config.bind -eq '127.0.0.1') { throw 'Run Configure-Connection.ps1 -BindAddress with the Workbench LAN IP first' }
 New-NetFirewallRule -DisplayName 'Dross Translation Gateway - trusted Steam Deck' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $config.port -LocalAddress $config.bind -RemoteAddress $TrustedDevice -Profile Private -Program (Join-Path (Split-Path $PSScriptRoot -Parent) '.venv\Scripts\python.exe')

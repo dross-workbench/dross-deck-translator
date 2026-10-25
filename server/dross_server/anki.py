@@ -17,7 +17,11 @@ class Anki:
             raise ServiceError('anki_disabled', 'Enable AnkiConnect integration on Workbench first.', 409)
         try:
             async with httpx.AsyncClient(trust_env=False, timeout=10, transport=self.transport) as client:
-                data = (await client.post('http://127.0.0.1:8765', json={'action': action, 'version': 6, 'params': params})).json()
+                response = await client.post('http://127.0.0.1:8765', json={'action': action, 'version': 6, 'params': params})
+                response.raise_for_status()
+                data = response.json()
+            if not isinstance(data, dict) or 'error' not in data or 'result' not in data:
+                raise ValueError('Invalid AnkiConnect response')
             if data.get('error'):
                 raise ServiceError('anki_error', 'AnkiConnect rejected the operation. Check Anki and its add-on permissions.', 502)
             return data['result']
@@ -25,6 +29,9 @@ class Anki:
             raise ServiceError('anki_unavailable', 'Start Anki with AnkiConnect enabled on Workbench localhost.', 503)
 
     async def sync(self, item, game_subdeck=True):
+        version = await self.invoke('version')
+        if not isinstance(version, int) or version < 6:
+            raise ServiceError('anki_unavailable', 'The local endpoint is not a compatible AnkiConnect service.', 503)
         deck = 'Japanese::Game Immersion'
         if game_subdeck:
             game = re.sub(r'[^\w .-]', '_', item['game_title'] or item['game_id'])[:80]

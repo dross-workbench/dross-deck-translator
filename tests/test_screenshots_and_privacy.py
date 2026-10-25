@@ -13,9 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_synthetic_game_screenshots_and_ocr_fixture_geometry(tmp_path):
     """Generated scenes exercise fixture geometry; this is NOT a real OCR accuracy test."""
-    fonts = [Path('C:/Windows/Fonts/meiryo.ttc'), Path('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc')]
+    fonts = [Path('C:/Windows/Fonts/YuGothM.ttc'), Path('C:/Windows/Fonts/meiryo.ttc'), Path('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc')]
     font_path = next((p for p in fonts if p.exists()), None)
-    font = ImageFont.truetype(str(font_path), 28) if font_path else ImageFont.load_default()
+    if not font_path:
+        pytest.skip('Install a Japanese font (Yu Gothic, Meiryo or Noto Sans CJK)')
+    font = ImageFont.truetype(str(font_path), 28)
     samples = json.loads((ROOT/'tests/fixtures/dialogue.json').read_text(encoding='utf-8'))
     for sample in samples:
         screen = Image.new('RGB', (1280, 800), '#244334')
