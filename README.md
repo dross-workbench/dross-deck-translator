@@ -1,3 +1,40 @@
+# Dross Deck Translator
+
+A GPLv3 fork of [cat-in-a-box/Decky-Translator](https://github.com/cat-in-a-box/Decky-Translator), with an authenticated local Ollama gateway on Windows. The original project and copyright notices are retained below.
+
+Development branch: `feat/dross-local-immersion`. The fork has its own Decky identity, settings, temporary files and cache. Local-only mode is enabled by default; it blocks commercial OCR/translation providers. No paid AI API is required.
+
+## Connect Steam Deck to Workbench
+
+1. Use Python 3.12 or 3.13 on Windows. From the repository, run `server/Install-Server.ps1 -Python <python-executable> -BindAddress <WORKBENCH_PRIVATE_IP>`. This installs the server and portable Ollama, generates a token and a TLS certificate, and protects the private configuration with a Windows ACL. To reuse Ollama, pass `-OllamaPath <ollama.exe> -ModelsPath <models-directory>`. The default bind address is loopback for initial testing.
+2. Run `server/Start-Server.ps1`, then `server/Pull-Models.ps1` in another terminal. Only the gateway uses the LAN. Ollama remains on localhost with cloud features disabled and one model loaded at a time.
+3. In an Administrator PowerShell, run `server/Enable-Lan.ps1 -TrustedDevice <STEAM_DECK_PRIVATE_IP>`. The rule permits only that device, the gateway port, and the Windows Private network profile. Reserve both devices' addresses in your router. Never forward this port through your router.
+4. Read `server/.local/config.json` locally. In Decky, install `out/Dross.Deck.Translator.zip` using Settings → Developer → Install Plugin from ZIP. Open **Dross Deck Translator → Dross** and enter `https://<WORKBENCH_PRIVATE_IP>:18765`, the token, and the certificate fingerprint. Press **Save & Test Connection**. Keep the configuration file private.
+5. In Translation, select Japanese → English, Chrome Screen AI or RapidOCR, and **Dross Local AI**. Download the selected OCR engine using its existing download button. No screenshots leave the Deck during translation.
+6. Run a game. Hold the shortcut configured in Controls to translate; use the same shortcut's dismiss action to return to play. The fork retains the upstream controller behavior (the code defaults to L5; verify your binding in Controls). Choose English, Japanese, or bilingual display in Dross settings.
+
+Optional: download NLLB in Translation and enable **On-device fallback**. A fallback notification is shown; there is no automatic cloud fallback. To start Workbench after Windows sign-in, run `server/Enable-Autostart.ps1`; remove it with `-Remove`. Regenerating a certificate requires re-pairing its fingerprint on the Deck.
+
+## Build and verify
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm run typecheck
+pnpm run build
+.venv/Scripts/python.exe -m pytest -q
+.venv/Scripts/python.exe tools/package_plugin.py
+```
+
+Packaging verifies and includes the upstream Linux dependency archive, including the portable Python runtime. Windows dependencies are never put into the Deck ZIP. Initial OCR/model downloads still need internet; subsequent inference is local.
+
+Milestone 1 has passed 16 automated API/provider/cache tests and strict TypeScript validation. A real authenticated HTTPS request through the Deck-side provider produced English on Workbench, preserved its rectangle, and reused the result in 83 ms. SteamOS capture, controller behavior and overlay rendering require physical Steam Deck testing and are **not yet verified**.
+
+Workbench audit: i5-1135G7 (4 cores/8 threads), 11.8 GiB usable RAM, Intel Iris Xe integrated graphics. Ollama used CPU inference (zero VRAM offload). TranslateGemma 4B translated short synthetic dialogue in approximately 2.2–2.8 s warm; a cold request took 11.5 s. Process-tree peak working set was approximately 3.4 GiB. This is a small sample, not a full accuracy evaluation or Deck end-to-end latency. The current TranslateGemma prompt deliberately omits dialogue history; Qwen is the context-capable option. The server keeps no translation history; the plugin uses memory caching unless disk caching is enabled. Vocabulary storage is opt-in.
+
+## Upstream documentation and attribution
+
+The following original documentation describes upstream functionality, including optional cloud providers. Those providers are blocked while this fork's local-only setting is enabled.
+
 <p align="center">
   <img src="assets/readme-logo.png" alt="Decky Translator" />
 </p>

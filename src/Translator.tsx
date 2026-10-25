@@ -366,11 +366,12 @@ export class GameTranslatorLogic {
                 }
 
                 // Translate text (skips backend call if already translated by OCR provider)
-                let translatedRegions = await this.textTranslator.translateText(textRegions);
+                let translatedRegions = await this.textTranslator.translateText(textRegions, String(Router.MainRunningApp?.appid || appName || "unknown"));
                 if (isCancelled()) {
                     logger.debug('Translator', 'Translation cancelled after translation step');
                     return;
                 }
+                if (translatedRegions.some(r => r.drossFallback)) this.notify('Using on-device NLLB fallback', 3000);
                 logger.info('Translator', `Translation complete: ${translatedRegions.length} regions`);
 
                 if (this.hideIdenticalTranslations) {

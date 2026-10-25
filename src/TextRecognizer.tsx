@@ -446,7 +446,7 @@ export class TextRecognizer {
     }
 
     // Spacing for horizontal (same-line) merging
-    private getHorizontalSpacing(a: TextRegion, b: TextRegion, medianH: number): string {
+    private getHorizontalSpacing(a: TextRegion, b: TextRegion, _medianH: number): string {
         // No space before closing punctuation
         if (/^[.,!?:;)\]"'\u3002\u3001\uFF09\u300D\u300F\u3011\u3009\u300B)]/.test(b.text)) {
             return "";

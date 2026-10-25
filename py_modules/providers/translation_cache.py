@@ -4,6 +4,7 @@ import time
 import sqlite3
 import logging
 import threading
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,13 @@ _WHITESPACE = re.compile(r"\s+")
 
 def normalize(text):
     return _WHITESPACE.sub(" ", text.strip()).casefold()
+
+
+def cache_key(text, namespace=""):
+    # Context-aware providers preserve exact source case and whitespace.
+    if namespace:
+        return "dross:" + hashlib.sha256((namespace + "\0" + text).encode("utf-8")).hexdigest()
+    return normalize(text)
 
 
 class TranslationCache:
@@ -54,11 +62,11 @@ class TranslationCache:
             self._conn.execute("ALTER TABLE translations ADD COLUMN source_text TEXT")
         self._conn.commit()
 
-    def get_many(self, texts, source_lang, target_lang, min_tier):
+    def get_many(self, texts, source_lang, target_lang, min_tier, namespace=""):
         norm_by_input = {}
         for text in texts:
             if text and text.strip():
-                norm_by_input[text] = normalize(text)
+                norm_by_input[text] = cache_key(text, namespace)
         if not norm_by_input:
             return {}
 
@@ -95,13 +103,13 @@ class TranslationCache:
             if norm in translation_by_norm
         }
 
-    def put_many(self, pairs, source_lang, target_lang, tier, provider):
+    def put_many(self, pairs, source_lang, target_lang, tier, provider, namespace=""):
         now = int(time.time())
         rows = []
         for text, translation in pairs:
             if not text or not text.strip() or not translation:
                 continue
-            rows.append((source_lang, target_lang, normalize(text), text,
+            rows.append((source_lang, target_lang, cache_key(text, namespace), text,
                          translation, tier, provider, now, now))
         if not rows:
             return
@@ -180,8 +188,8 @@ class TranslationCache:
     def delete_entry(self, source_lang, target_lang, source_text):
         with self._lock:
             cur = self._conn.execute(
-                "DELETE FROM translations WHERE source_lang=? AND target_lang=? AND norm_text=?",
-                [source_lang, target_lang, normalize(source_text)],
+                "DELETE FROM translations WHERE source_lang=? AND target_lang=? AND (norm_text=? OR source_text=?)",
+                [source_lang, target_lang, normalize(source_text), source_text],
             )
             self._conn.commit()
         return cur.rowcount

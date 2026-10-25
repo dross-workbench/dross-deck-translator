@@ -338,7 +338,7 @@ const CacheEntriesModal: VFC<{ closeModal?: () => void; onCleared?: () => void }
     );
 };
 
-const knownGeminiModels: DropdownItem[] = [
+const knownGeminiModels: { label: React.ReactNode; data: string }[] = [
     { label: <span>2.5 Flash</span>, data: "gemini-2.5-flash" },
     { label: <span>2.5 Flash Lite</span>, data: "gemini-2.5-flash-lite" },
     { label: <span>3 Flash (Preview)</span>, data: "gemini-3-flash-preview" },
@@ -352,7 +352,7 @@ const GeminiModelSelector: VFC<{
     hasApiKey: boolean;
     onChange: (model: string) => void;
 }> = ({ selectedModel, hasApiKey, onChange }) => {
-    const [models, setModels] = useState<DropdownItem[]>(knownGeminiModels);
+    const [models, setModels] = useState<{ label: React.ReactNode; data: string }[]>(knownGeminiModels);
     const [loading, setLoading] = useState(false);
     const [validated, setValidated] = useState(false);
 
@@ -1061,6 +1061,7 @@ export const TabTranslation: VFC<TabTranslationProps> = ({ scrollTarget, onScrol
                             <div style={{ flex: 1 }}>
                                 <Dropdown
                                     rgOptions={[
+                                        { label: <span>Dross Local AI</span>, data: "dross" },
                                         { label: <span>On-Device</span>, data: "ct2" },
                                         { label: <span>Google Translate</span>, data: "freegoogle" },
                                         { label: <span>Google Cloud</span>, data: "googlecloud" }

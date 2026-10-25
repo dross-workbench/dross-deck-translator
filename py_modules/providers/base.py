@@ -42,6 +42,7 @@ def classify_google_error(status_code: int, body: str) -> str:
 
 class ProviderType(Enum):
     """Enum for available provider types."""
+    DROSS = "dross"
     GOOGLE = "google"           # Google Cloud (requires API key)
     OCR_SPACE = "ocrspace"      # OCR.space (free, no key needed)
     FREE_GOOGLE = "freegoogle"  # Free Google Translate via deep-translator

@@ -91,11 +91,14 @@ import requests
 
 # Import provider system
 from providers import ProviderManager, TextRegion, NetworkError, ApiKeyError, RateLimitError
+from providers.base import ProviderType
+from providers.dross_local import DROSS_DEFAULTS
 from providers.translation_cache import TranslationCache, PROVIDER_TIERS, normalize
 
 _processing_lock = False
 
 SENSITIVE_SETTING_KEYS = {
+    "dross_token",
     "google_api_key",
     "google_vision_api_key",
     "google_translate_api_key",
@@ -183,15 +186,15 @@ logger.debug(f"GStreamer plugins path: {GSTPLUGINSPATH}")
 os.makedirs(DECKY_PLUGIN_LOG_DIR, exist_ok=True)
 
 # Set up log files
-std_out_file_path = Path(DECKY_PLUGIN_LOG_DIR) / "decky-translator-std-out.log"
+std_out_file_path = Path(DECKY_PLUGIN_LOG_DIR) / "dross-deck-translator-std-out.log"
 std_out_file = open(std_out_file_path, "w")
-std_err_file = open(Path(DECKY_PLUGIN_LOG_DIR) / "decky-translator-std-err.log", "w")
+std_err_file = open(Path(DECKY_PLUGIN_LOG_DIR) / "dross-deck-translator-std-err.log", "w")
 logger.debug(f"Standard output logs: {std_out_file_path}")
 
 # Set up file logging
 from logging.handlers import TimedRotatingFileHandler
 
-log_file = Path(DECKY_PLUGIN_LOG_DIR) / "decky-translator.log"
+log_file = Path(DECKY_PLUGIN_LOG_DIR) / "dross-deck-translator.log"
 log_file_handler = TimedRotatingFileHandler(log_file, when="midnight", backupCount=2)
 log_file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 log_file_handler.addFilter(_url_redact_filter)
@@ -1078,6 +1081,7 @@ class SettingsManager:
             os.makedirs(os.path.dirname(self.settings_path), exist_ok=True)
             with open(self.settings_path, 'w') as f:
                 json.dump(self.settings, f, indent=4)
+            os.chmod(self.settings_path, 0o600)
             logger.debug(f"Saved setting {key}={_mask_for_log(key, value)}")
             return True
         except Exception as e:
@@ -1155,9 +1159,9 @@ def get_base64_image(image_path):
 
 class Plugin:
     _filepath: str = None
-    _screenshotPath: str = "/tmp/decky-translator"  # Temporary directory for screenshots (deleted after OCR)
+    _screenshotPath: str = "/tmp/dross-deck-translator"  # Temporary directory for screenshots (deleted after OCR)
     _settings = None
-    _input_language: str = "auto"  # Default to auto-detect
+    _input_language: str = "ja"  # Default to auto-detect
     _target_language: str = "en"
     _input_mode: int = 0  # 0 = both touchpads, 1 = left touchpad, 2 = right touchpad
     _hold_time_translate: int = 1000  # Default to 1 second
@@ -1181,7 +1185,7 @@ class Plugin:
     _provider_manager: ProviderManager = None
     _use_free_providers: bool = True  # Default to free providers (no API key needed)
     _ocr_provider: str = "chromescreenai"  # "rapidocr" (RapidOCR), "ocrspace" (OCR.space), or "googlecloud" (Google Cloud)
-    _translation_provider: str = "freegoogle"  # "freegoogle" or "googlecloud"
+    _translation_provider: str = "dross"  # "freegoogle" or "googlecloud"
 
     # Translation cache
     _translation_cache: TranslationCache = None
@@ -1491,7 +1495,12 @@ class Plugin:
             else:
                 logger.warning(f"Unknown setting key: {key}")
 
-            return self._settings.set_setting(key, value)
+            if key == "dross_save_text" and not value and self._translation_cache:
+                self._translation_cache.clear()
+            result = self._settings.set_setting(key, value)
+            if key.startswith("dross_") and self._provider_manager:
+                self._dross_provider()
+            return result
         except Exception as e:
             logger.error(f"Error setting {key}: {str(e)}")
             logger.error(traceback.format_exc())
@@ -1559,15 +1568,38 @@ class Plugin:
     async def get_provider_status(self):
         try:
             if self._provider_manager:
+                self._dross_provider()
                 return self._provider_manager.get_provider_status()
             return {"error": "Provider manager not initialized"}
         except Exception as e:
             logger.error(f"Error getting provider status: {str(e)}")
             return {"error": str(e)}
 
+    def _dross_provider(self):
+        provider = self._provider_manager.get_translation_provider(ProviderType.DROSS)
+        provider.configure({k: self._settings.get_setting(k, v) for k, v in DROSS_DEFAULTS.items()})
+        return provider
+
+    async def get_dross_settings(self):
+        result = {k: self._settings.get_setting(k, v) for k, v in DROSS_DEFAULTS.items() if k != "dross_token"}
+        result["paired"] = bool(self._settings.get_setting("dross_token", ""))
+        return result
+
+    async def test_dross_connection(self):
+        try:
+            return await self._dross_provider().health()
+        except (NetworkError, ApiKeyError) as e:
+            return {"status": "error", "message": str(e)}
+
+    async def clear_dross_session(self):
+        self._dross_provider().clear_session()
+        return True
+
     async def check_web_reachability(self):
         try:
             if self._provider_manager:
+                if self._settings.get_setting("dross_local_only", True):
+                    return {}
                 return await self._provider_manager.check_web_reachability()
             return {"error": "Provider manager not initialized"}
         except Exception as e:
@@ -2158,6 +2190,8 @@ class Plugin:
 
     async def recognize_text(self, image_data: str):
         try:
+            if self._settings.get_setting("dross_local_only", True) and self._ocr_provider not in ("chromescreenai", "rapidocr"):
+                raise NetworkError("Local-only mode blocks cloud OCR. Select Chrome Screen AI or RapidOCR.")
             if not image_data:
                 logger.error("Empty image data for text recognition")
                 return []
@@ -2233,7 +2267,7 @@ class Plugin:
                 except Exception as cleanup_error:
                     logger.warning(f"Failed to delete temporary screenshot: {cleanup_error}")
 
-    async def translate_text(self, text_regions, target_language=None, input_language=None):
+    async def translate_text(self, text_regions, target_language=None, input_language=None, game_id="unknown"):
         try:
             if not text_regions:
                 return []
@@ -2244,6 +2278,15 @@ class Plugin:
             if not self._provider_manager:
                 logger.error("Provider manager not initialized")
                 return None
+
+            if self._translation_provider == "dross":
+                provider = self._dross_provider()
+                fallback = self._provider_manager.get_translation_provider(ProviderType.CT2)
+                return await provider.translate_regions(text_regions, input_lang, target_lang, game_id,
+                    persistent_cache=self._translation_cache if self._translation_cache_enabled else None,
+                    fallback=fallback)
+            if self._settings.get_setting("dross_local_only", True) and self._translation_provider != "ct2":
+                raise NetworkError("Local-only mode blocks cloud translation. Select Dross Local AI or On-Device.")
 
             # If regions already have translatedText (e.g. from Gemini Vision),
             # skip the translation step entirely
@@ -2674,7 +2717,7 @@ class Plugin:
         logger.info("Plugin initialization started")
         try:
             self._settings = SettingsManager(
-                name="decky-translator-settings",
+                name="dross-deck-translator-settings",
                 settings_directory=settingsDir
             )
             self._settings.read()
@@ -2749,25 +2792,25 @@ class Plugin:
                 if self._ocr_provider == "googlecloud":
                     self._translation_provider = "googlecloud"
                 else:
-                    self._translation_provider = "freegoogle"
+                    self._translation_provider = "dross"
                 self._settings.set_setting("translation_provider", self._translation_provider)
 
             # Set up CT2 translation models directory
-            ct2_models_dir = os.path.join(settingsDir, "decky-translator", "models", "nllb")
+            ct2_models_dir = os.path.join(settingsDir, "dross-deck-translator", "models", "nllb")
             os.makedirs(ct2_models_dir, exist_ok=True)
 
             # Same parent as NLLB so both share the plugin uninstall lifecycle.
-            screenai_models_dir = os.path.join(settingsDir, "decky-translator", "models")
+            screenai_models_dir = os.path.join(settingsDir, "dross-deck-translator", "models")
             os.makedirs(screenai_models_dir, exist_ok=True)
 
             # RapidOCR models download into the same parent dir as NLLB and
             # Chrome Screen AI so they all persist across plugin updates.
-            rapidocr_models_dir = os.path.join(settingsDir, "decky-translator", "models")
+            rapidocr_models_dir = os.path.join(settingsDir, "dross-deck-translator", "models")
             os.makedirs(rapidocr_models_dir, exist_ok=True)
 
             try:
                 self._translation_cache = TranslationCache(
-                    os.path.join(settingsDir, "translation_cache.db")
+                    os.path.join(settingsDir, "dross-translation-cache.db")
                 )
             except Exception as e:
                 logger.error(f"Failed to open translation cache, continuing without it: {e}")
@@ -2867,6 +2910,8 @@ class Plugin:
 
             if self._translation_cache:
                 self._translation_cache.close()
+            if self._provider_manager:
+                self._dross_provider().cache.close()
                 self._translation_cache = None
 
             if self._evdev_monitor:

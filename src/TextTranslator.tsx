@@ -12,6 +12,8 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
 // Include translated text with the original region info
 export interface TranslatedRegion extends TextRegion {
     translatedText: string;
+    englishTranslation?: string;
+    drossFallback?: boolean;
 }
 
 export class TextTranslator {
@@ -39,7 +41,7 @@ export class TextTranslator {
         return this.inputLanguage;
     }
 
-    async translateText(textRegions: TextRegion[]): Promise<TranslatedRegion[]> {
+    async translateText(textRegions: TextRegion[], gameId: string = "unknown"): Promise<TranslatedRegion[]> {
         try {
             // Skip translation if there's nothing to translate
             if (!textRegions.length) {
@@ -47,11 +49,12 @@ export class TextTranslator {
             }
 
             // Call the Python backend method for translation, now including input language
-            const response = await call<[TextRegion[], string, string], TranslatedRegion[] | ErrorResponse>(
+            const response = await call<[TextRegion[], string, string, string], TranslatedRegion[] | ErrorResponse>(
                 'translate_text',
                 textRegions,
                 this.targetLanguage,
-                this.inputLanguage
+                this.inputLanguage,
+                gameId
             );
 
             if (response) {

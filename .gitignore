@@ -78,3 +78,14 @@ cli/
 # Local files
 /docs
 /nul
+
+# Dross private runtime data and credentials
+.local/
+.venv/
+*.db
+*.db-*
+*.pem
+*.key
+*.pfx
+.pytest_cache/
+server/data/
