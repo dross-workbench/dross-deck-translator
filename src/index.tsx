@@ -200,7 +200,7 @@ const GameTranslator: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) => {
                         setCurrentTabRoute(tabID);
                     }}
                     tabs={[
-                        { title: "Dross", content: <DrossSettings />, id: "dross" },
+                        { title: "Dross", content: <DrossSettings logic={logic} />, id: "dross" },
                         {
                             // @ts-ignore
                             title: <IconTranslate />,

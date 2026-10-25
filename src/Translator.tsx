@@ -6,6 +6,7 @@ import { TextRecognizer, NetworkError, ApiKeyError, RateLimitError, ModelNotAvai
 import { TextTranslator } from "./TextTranslator";
 import { Input, InputMode, ActionType, ProgressInfo } from "./Input";
 import { ImageState } from "./Overlay";
+import { openStudy } from './StudyOverlay';
 import { logger } from "./Logger";
 
 // Screenshot response interface
@@ -385,6 +386,10 @@ export class GameTranslatorLogic {
                 }
 
                 this.imageState.showTranslatedImage(result.base64, translatedRegions);
+                if (this.translationProvider === 'dross') {
+                    const mode = await call<[string, string], string>('get_setting', 'dross_mode', 'translate');
+                    if (!isCancelled() && mode === 'study') await openStudy(this.dismiss);
+                }
             } else {
                 // No text found, show message
                 this.imageState.updateProcessingStep("No text found");

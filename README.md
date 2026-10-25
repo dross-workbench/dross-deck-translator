@@ -15,6 +15,12 @@ Development branch: `feat/dross-local-immersion`. The fork has its own Decky ide
 
 Optional: download NLLB in Translation and enable **On-device fallback**. A fallback notification is shown; there is no automatic cloud fallback. To start Workbench after Windows sign-in, run `server/Enable-Autostart.ps1`; remove it with `-Remove`. Regenerating a certificate requires re-pairing its fingerprint on the Deck.
 
+## Study and vocabulary
+
+Run `server/Install-Study.ps1` once on Workbench, then restart the gateway. It installs SudachiPy and indexes JMdict locally. Select **Study** mode in the Dross tab; the shortcut opens a sentence selector, word selector, readings, dictionary forms, definitions and particle notes. Grammar generation is a separate button. **Study last screen** also opens the most recent recognition. B or **Resume game** dismisses the study dialog. Controller focus and whether game input leaks through the modal still need SteamOS testing; pause the game manually when studying until verified.
+
+**Save vocabulary** records only the selected item, its game identifier and example sentence on Workbench. Repeated saves retain examples and encounter counts. Run `server/Export-Vocabulary.ps1` for an Anki-compatible UTF-8 TSV in `server/.local/`. Import with tab separator and HTML enabled; map the named columns to your note fields. The first field is a stable ID for duplicate detection. Dictionary data is JMdict © EDRDG under CC BY-SA 4.0, downloaded separately and attributed in the UI and export. Readings come from Sudachi, not the language model. Names and contextual senses can still be ambiguous.
+
 ## Build and verify
 
 ```powershell

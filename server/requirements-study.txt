@@ -1,0 +1,3 @@
+-r requirements.txt
+SudachiPy==0.7.0
+sudachidict_core==20261015

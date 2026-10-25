@@ -16,6 +16,7 @@ DROSS_DEFAULTS = {
     "dross_allow_http": False, "dross_local_only": True,
     "dross_save_text": False, "dross_allow_screenshots": False,
     "dross_context_lines": 3, "dross_display_mode": "english",
+    "dross_mode": "translate",
 }
 
 

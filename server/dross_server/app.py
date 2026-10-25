@@ -1,15 +1,20 @@
 import secrets
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from .config import Config
 from .inference import Ollama, ServiceError
-from .schemas import TranslateRequest
+from .schemas import TranslateRequest, AnalysisRequest, VocabularyRequest
+from .study import JapaneseStudy
+from .vocabulary import VocabularyStore
 
 
 def create_app(config=None, inference=None):
     config = config or Config.from_env()
     inference = inference or Ollama(config)
+    study = JapaneseStudy(config.data_dir.resolve())
+    vocabulary = VocabularyStore(config.data_dir)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -64,5 +69,30 @@ def create_app(config=None, inference=None):
     @app.post("/v1/translate")
     async def translate(body: TranslateRequest):
         return await inference.translate(body)
+
+    @app.post('/v1/analyze')
+    async def analyze(body: AnalysisRequest):
+        result = await asyncio.to_thread(study.analyze, body.text)
+        result['translation'] = body.translation
+        if body.explain:
+            result['grammar'] = await study.explain(body, inference)
+        return result
+
+    @app.post('/v1/vocabulary')
+    async def save_vocabulary(body: VocabularyRequest):
+        return await asyncio.to_thread(vocabulary.save, body)
+
+    @app.get('/v1/vocabulary')
+    async def list_vocabulary(game_id: str | None = None):
+        return {'items': await asyncio.to_thread(vocabulary.list, game_id)}
+
+    @app.get('/v1/vocabulary/export')
+    async def export_vocabulary(game_id: str | None = None):
+        return Response(await asyncio.to_thread(vocabulary.export, game_id), media_type='text/tab-separated-values; charset=utf-8',
+                        headers={'Content-Disposition': 'attachment; filename="dross-vocabulary.tsv"'})
+
+    @app.delete('/v1/vocabulary')
+    async def delete_vocabulary():
+        return {'deleted': await asyncio.to_thread(vocabulary.delete_all)}
 
     return app

@@ -1,8 +1,10 @@
 import { useEffect, useState, VFC } from 'react';
 import { call } from '@decky/api';
 import { PanelSection, PanelSectionRow, TextField, ButtonItem, ToggleField, Dropdown, Field, SliderField } from '@decky/ui';
+import { openStudy } from './StudyOverlay';
+import { GameTranslatorLogic } from './Translator';
 
-export const DrossSettings: VFC = () => {
+export const DrossSettings: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) => {
     const [settings, setSettings] = useState<Record<string, any>>({});
     const [token, setToken] = useState('');
     const [status, setStatus] = useState('Not tested');
@@ -26,6 +28,8 @@ export const DrossSettings: VFC = () => {
     const toggle = (key: string, label: string, description: string) => <PanelSectionRow><ToggleField label={label} description={description} checked={!!settings[key]} onChange={v => { save(key, v).catch(() => setStatus('Save failed')); }} /></PanelSectionRow>;
     return <>
         <PanelSection title="Dross Local AI">
+            <PanelSectionRow><Field label="Mode"><Dropdown selectedOption={settings.dross_mode || 'translate'} rgOptions={[{ label: 'Translate', data: 'translate' }, { label: 'Study', data: 'study' }]} onChange={o => { save('dross_mode', o.data).catch(() => setStatus('Save failed')); }} /></Field></PanelSectionRow>
+            <PanelSectionRow><ButtonItem onClick={async () => { if (!await openStudy(logic.dismiss)) setStatus('Translate a screen first, then open Study.'); }}>Study last screen</ButtonItem></PanelSectionRow>
             <PanelSectionRow><TextField label="Workbench gateway" value={settings.dross_server_url || ''} onChange={e => setSettings(s => ({ ...s, dross_server_url: e.target.value }))} /></PanelSectionRow>
             <PanelSectionRow><TextField label="Pairing token" bIsPassword value={token} onChange={e => setToken(e.target.value)} /></PanelSectionRow>
             <PanelSectionRow><TextField label="Certificate SHA-256" value={settings.dross_certificate_sha256 || ''} onChange={e => setSettings(s => ({ ...s, dross_certificate_sha256: e.target.value }))} /></PanelSectionRow>

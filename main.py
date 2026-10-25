@@ -1595,6 +1595,28 @@ class Plugin:
         self._dross_provider().clear_session()
         return True
 
+    async def get_dross_study_snapshot(self):
+        provider = self._dross_provider()
+        return {"regions": provider.last_regions, "context": provider.last_context, "game_id": provider.game_id}
+
+    async def analyze_dross_sentence(self, payload):
+        try:
+            return await self._dross_provider().request("POST", "/v1/analyze", payload)
+        except (NetworkError, ApiKeyError) as e:
+            return {"error": True, "message": str(e)}
+
+    async def save_dross_word(self, payload):
+        try:
+            return await self._dross_provider().request("POST", "/v1/vocabulary", payload)
+        except (NetworkError, ApiKeyError) as e:
+            return {"error": True, "message": str(e)}
+
+    async def delete_dross_history(self):
+        try:
+            return await self._dross_provider().request("DELETE", "/v1/vocabulary")
+        except (NetworkError, ApiKeyError) as e:
+            return {"error": True, "message": str(e)}
+
     async def check_web_reachability(self):
         try:
             if self._provider_manager:
