@@ -21,6 +21,12 @@ Run `server/Install-Study.ps1` once on Workbench, then restart the gateway. It i
 
 **Save vocabulary** records only the selected item, its game identifier and example sentence on Workbench. Repeated saves retain examples and encounter counts. Run `server/Export-Vocabulary.ps1` for an Anki-compatible UTF-8 TSV in `server/.local/`. Import with tab separator and HTML enabled; map the named columns to your note fields. The first field is a stable ID for duplicate detection. Dictionary data is JMdict © EDRDG under CC BY-SA 4.0, downloaded separately and attributed in the UI and export. Readings come from Sudachi, not the language model. Names and contextual senses can still be ambiguous.
 
+Optional AnkiConnect: install Anki and the AnkiConnect add-on yourself, keep its listener on `127.0.0.1:8765`, add `"anki_enabled": true` to the private Workbench configuration and restart the gateway. **Save + Anki** creates or updates a `Dross Game Immersion` note in `Japanese::Game Immersion::<game ID>`. If Anki fails, the local vocabulary save still succeeds and the error is shown. Existing Anki cards are not deleted when Workbench history is deleted. AnkiConnect has been tested with a mocked localhost API; a working Anki instance has not been verified on this Workbench. Another Python process already occupies its usual port; resolve that conflict without stopping unrelated services.
+
+To include a screenshot, enable **Allow saved screenshots** on the Deck, set `"allow_screenshots": true` in Workbench's private configuration, restart the gateway, capture a new screen, and explicitly select **Include screenshot in this save** in Study. Only that save uploads an image; translation always uses text. Saved PNGs have metadata removed. The Dross tab offers confirmed deletion of Workbench vocabulary, examples and screenshots. Turning off encounter tracking stops recording later occurrences of previously saved words.
+
+Common grammar patterns use deterministic notes. Other contextual model explanations remain experimental: the small model benchmarks produced grammatical errors. Dictionary definitions are never sourced from those explanations.
+
 ## Build and verify
 
 ```powershell

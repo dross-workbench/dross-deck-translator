@@ -37,6 +37,8 @@ def test_fixture_coordinates_context_cache_and_no_screenshot():
         async def request(method, path, payload=None):
             if path == '/health':
                 return {'translation_available': True, 'model_identity': 'fixture-model'}
+            if path == '/v1/vocabulary/encounters':
+                return {'recorded': 0}
             assert 'image' not in payload and 'rect' not in json.dumps(payload)
             calls.append(payload)
             return {'segments': [{'id': s['id'], 'translation': 'Translation: '+s['text']} for s in payload['segments']]}

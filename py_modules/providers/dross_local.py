@@ -6,6 +6,7 @@ import ipaddress
 import json
 import ssl
 import time
+import uuid
 from urllib.parse import urlsplit
 from .base import TranslationProvider, ProviderType, NetworkError, ApiKeyError
 from .translation_cache import TranslationCache
@@ -17,6 +18,7 @@ DROSS_DEFAULTS = {
     "dross_save_text": False, "dross_allow_screenshots": False,
     "dross_context_lines": 3, "dross_display_mode": "english",
     "dross_mode": "translate",
+    "dross_track_encounters": True,
 }
 
 
@@ -135,6 +137,7 @@ class DrossLocalProvider(TranslationProvider):
                 self.game_id = game_id
             self.last_seen = now
             texts = [r["text"] for r in regions]
+            changed = texts != self.last_texts
             # An unchanged screen uses its original context, so repeated captures hit cache.
             context = self.last_context if texts == self.last_texts else self.context[:]
             count = max(0, min(6, int(self.settings["dross_context_lines"])))
@@ -179,4 +182,12 @@ class DrossLocalProvider(TranslationProvider):
                        "translatedText": r["text"] if mode == "japanese" else f"{r['text']}\n{t}" if mode == "bilingual" else t,
                        "drossFallback": fallback_used} for r, t in zip(regions, translations)]
             self.last_regions = result
+            if changed and self.settings["dross_track_encounters"]:
+                try:
+                    await self.request("POST", "/v1/vocabulary/encounters", {
+                        "event_id": str(uuid.uuid4()), "game_id": game_id,
+                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(texts) if t.strip()]})
+                except (NetworkError, ApiKeyError):
+                    # Optional history must never prevent a translated overlay.
+                    pass
             return result

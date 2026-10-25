@@ -5,9 +5,10 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from .config import Config
 from .inference import Ollama, ServiceError
-from .schemas import TranslateRequest, AnalysisRequest, VocabularyRequest
+from .schemas import TranslateRequest, AnalysisRequest, VocabularyRequest, EncounterRequest
 from .study import JapaneseStudy
 from .vocabulary import VocabularyStore
+from .anki import Anki
 
 
 def create_app(config=None, inference=None):
@@ -15,6 +16,8 @@ def create_app(config=None, inference=None):
     inference = inference or Ollama(config)
     study = JapaneseStudy(config.data_dir.resolve())
     vocabulary = VocabularyStore(config.data_dir)
+    anki = Anki(config)
+    anki_lock = asyncio.Lock()
 
     @asynccontextmanager
     async def lifespan(app):
@@ -80,7 +83,22 @@ def create_app(config=None, inference=None):
 
     @app.post('/v1/vocabulary')
     async def save_vocabulary(body: VocabularyRequest):
-        return await asyncio.to_thread(vocabulary.save, body)
+        if body.screenshot_base64 and not config.allow_images:
+            raise ServiceError('screenshots_disabled', 'Enable optional screenshots on both Workbench and the Deck first.', 403)
+        item = await asyncio.to_thread(vocabulary.save, body)
+        if body.sync_anki:
+            async with anki_lock:
+                full = next(x for x in await asyncio.to_thread(vocabulary.list, body.game_id) if x['id'] == item['id'])
+                try:
+                    item['anki_id'] = await anki.sync(full, body.game_subdeck)
+                    await asyncio.to_thread(vocabulary.set_anki_id, item['id'], item['anki_id'])
+                except ServiceError as e:
+                    item['anki_error'] = e.message  # Local save still succeeds.
+        return item
+
+    @app.post('/v1/vocabulary/encounters')
+    async def record_encounters(body: EncounterRequest):
+        return {'recorded': await asyncio.to_thread(vocabulary.record_encounters, body, study)}
 
     @app.get('/v1/vocabulary')
     async def list_vocabulary(game_id: str | None = None):

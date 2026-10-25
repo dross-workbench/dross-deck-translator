@@ -37,3 +37,12 @@ class VocabularyRequest(StrictModel):
     sentence_translation: str = Field(default='', max_length=3000)
     game_id: str = Field(default='unknown', max_length=120)
     game_title: str = Field(default='', max_length=200)
+    screenshot_base64: str | None = Field(default=None, max_length=2_800_000)
+    sync_anki: bool = False
+    game_subdeck: bool = True
+
+
+class EncounterRequest(StrictModel):
+    event_id: str = Field(min_length=8, max_length=80, pattern=r'^[A-Za-z0-9-]+$')
+    game_id: str = Field(min_length=1, max_length=120)
+    segments: list[Segment] = Field(max_length=24)

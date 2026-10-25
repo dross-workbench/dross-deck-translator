@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, VFC } from 'react';
 import { call } from '@decky/api';
-import { ModalRoot, DialogButton, Dropdown, Focusable, showModal } from '@decky/ui';
+import { ModalRoot, DialogButton, Dropdown, Focusable, showModal, ToggleField } from '@decky/ui';
 import { TranslatedRegion } from './TextTranslator';
 
 interface Token {
@@ -9,10 +9,10 @@ interface Token {
     dictionary_entries: { reading: string; senses: { definitions: string[]; part_of_speech: string[] }[] }[];
 }
 interface Analysis {
-    tokens: Token[]; dictionary_available: boolean; grammar?: { explanation: string };
+    tokens: Token[]; dictionary_available: boolean; grammar?: { explanation: string; source: string };
     error?: boolean; message?: string;
 }
-interface Snapshot { regions: TranslatedRegion[]; context: string[]; game_id: string; }
+interface Snapshot { regions: TranslatedRegion[]; context: string[]; game_id: string; image?: string; }
 
 const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ snapshot, closeModal }) => {
     const [sentence, setSentence] = useState(0);
@@ -21,6 +21,8 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
     const [message, setMessage] = useState('');
     const [busy, setBusy] = useState(false);
     const [showGrammar, setShowGrammar] = useState(false);
+    const [includeImage, setIncludeImage] = useState(false);
+    const saveEvents = useRef(new Map<string, string>());
     const requestId = useRef(0);
     const region = snapshot.regions[sentence];
     const analyze = async (explain: boolean) => {
@@ -39,17 +41,21 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
     const token = analysis?.tokens[word];
     const entries = token?.dictionary_entries || [];
     const meaning = entries[0]?.senses.slice(0, 3).map(s => s.definitions.join('; ')).join(' / ') || 'No local dictionary definition found';
-    const save = async () => {
+    const save = async (syncAnki = false) => {
         if (!token) return;
         setBusy(true);
         try {
+            const selection = `${sentence}:${word}`;
+            if (!saveEvents.current.has(selection)) saveEvents.current.set(selection, crypto.randomUUID());
             const result = await call<[any], any>('save_dross_word', {
-                event_id: crypto.randomUUID(), word: token.surface, dictionary_form: token.dictionary_form,
+                event_id: saveEvents.current.get(selection), word: token.surface, dictionary_form: token.dictionary_form,
                 reading: entries[0]?.reading || token.reading, meaning,
                 sentence: region.text, sentence_translation: region.englishTranslation || region.translatedText,
                 game_id: snapshot.game_id,
+                sync_anki: syncAnki,
+                ...(includeImage && snapshot.image ? { screenshot_base64: snapshot.image.replace(/^data:image\/\w+;base64,/, '') } : {}),
             });
-            setMessage(result.error ? result.message : `Saved · ${result.encounters} encounter(s)`);
+            setMessage(result.error ? result.message : `Saved · ${result.encounters} encounter(s)${result.anki_error ? ' · '+result.anki_error : result.anki_id ? ' · Synced to Anki' : ''}`);
         } catch { setMessage('Save failed. Check Workbench.'); }
         finally { setBusy(false); }
     };
@@ -67,21 +73,24 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
                 {token.particle_note && <p>{token.particle_note}</p>}
                 <small>JMdict definitions are possible senses, not a guaranteed match for this context.</small>
             </div>}
+            {snapshot.image && <ToggleField label="Include screenshot in this save" checked={includeImage} onChange={setIncludeImage} />}
             <Focusable style={{ display: 'flex', gap: 8 }}>
-                <DialogButton disabled={busy || !token} onClick={save}>Save vocabulary</DialogButton>
+                <DialogButton disabled={busy || !token} onClick={() => save()}>Save vocabulary</DialogButton>
+                <DialogButton disabled={busy || !token} onClick={() => save(true)}>Save + Anki</DialogButton>
                 <DialogButton disabled={busy} onClick={() => analysis?.grammar ? setShowGrammar(!showGrammar) : analyze(true)}>{showGrammar ? 'Hide grammar' : 'Explain grammar'}</DialogButton>
                 <DialogButton onClick={closeModal}>Resume game</DialogButton>
             </Focusable>
             {message && <p role="status">{message}</p>}
-            {showGrammar && <div><p>{analysis?.grammar?.explanation}</p><small>Local model explanation; verify ambiguous points.</small></div>}
+            {showGrammar && <div><p>{analysis?.grammar?.explanation}</p><small>{analysis?.grammar?.source}</small></div>}
             <p style={{ fontSize: 11, opacity: 0.6 }}>Readings: Sudachi. Definitions: JMdict © EDRDG, CC BY-SA 4.0. edrdg.org/edrdg/licence.html</p>
         </div>
     </ModalRoot>;
 };
 
-export async function openStudy(onDismissOverlay: () => void) {
+export async function openStudy(onDismissOverlay: () => void, image?: string) {
     const snapshot = await call<[], Snapshot>('get_dross_study_snapshot');
     if (!snapshot.regions.length) return false;
+    snapshot.image = image;
     onDismissOverlay();
     showModal(<StudyOverlay snapshot={snapshot} />);
     return true;

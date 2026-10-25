@@ -15,6 +15,8 @@ catch {
 $env:DROSS_TOKEN = $config.token
 $env:DROSS_TRANSLATION_MODEL = $config.translation_model
 $env:DROSS_ANALYSIS_MODEL = $config.analysis_model
+$env:DROSS_ALLOW_IMAGES = if ($config.allow_screenshots) { '1' } else { '0' }
+$env:DROSS_ANKI_ENABLED = if ($config.anki_enabled) { '1' } else { '0' }
 $env:DROSS_DATA_DIR = Join-Path $localDir 'data'
 Set-Location -LiteralPath $PSScriptRoot
 & (Join-Path (Split-Path $PSScriptRoot -Parent) '.venv\Scripts\python.exe') -m uvicorn dross_server.app:create_app --factory --host $config.bind --port $config.port --ssl-keyfile (Join-Path $localDir 'server.key') --ssl-certfile (Join-Path $localDir 'server.pem') --no-access-log --limit-concurrency 8

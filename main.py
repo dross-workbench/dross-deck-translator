@@ -1607,6 +1607,8 @@ class Plugin:
 
     async def save_dross_word(self, payload):
         try:
+            if payload.get("screenshot_base64") and not self._settings.get_setting("dross_allow_screenshots", False):
+                return {"error": True, "message": "Enable optional screenshots in Dross privacy settings first."}
             return await self._dross_provider().request("POST", "/v1/vocabulary", payload)
         except (NetworkError, ApiKeyError) as e:
             return {"error": True, "message": str(e)}

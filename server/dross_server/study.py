@@ -20,6 +20,17 @@ PARTICLES = {
 }
 
 
+def grammar_notes(text):
+    notes = []
+    if 'ないで' in text:
+        notes.append('Verb negative form + で can form a request not to do something (often with ください omitted), or mean without doing something when a clause follows. In a standalone request such as 忘れないで, read it as please do not forget. This で is part of the construction, not the location/means particle.')
+    if 'ている' in text or 'でいる' in text:
+        notes.append('The ている construction can express an ongoing action or a resulting state; the verb and context determine which.')
+    if 'なければ' in text:
+        notes.append('The negative conditional なければ means if not. In なければならない it expresses necessity: must do.')
+    return notes
+
+
 def hiragana(value):
     return ''.join(chr(ord(c)-0x60) if '\u30a1' <= c <= '\u30f6' else c for c in value)
 
@@ -35,7 +46,7 @@ class JapaneseStudy:
             try:
                 from sudachipy import Dictionary, SplitMode
                 if self.tokenizer is None:
-                    self.tokenizer = Dictionary().create()
+                    self.tokenizer = Dictionary().tokenizer()
             except (ImportError, OSError):
                 raise ServiceError('tokenizer_missing', 'Install server study requirements and the Sudachi dictionary.')
             tokens = []
@@ -64,6 +75,9 @@ class JapaneseStudy:
                     'reading_source': 'SudachiPy + SudachiDict core; readings may be ambiguous for names'}
 
     async def explain(self, request, inference):
+        notes = grammar_notes(request.text)
+        if notes:
+            return {'explanation': ' '.join(notes), 'model': None, 'source': 'Deterministic grammar notes', 'timing': {'latency_ms': 0}}
         if any(len(x) > 1500 for x in request.context):
             raise ServiceError('text_too_long', 'Context line is too long.', 422)
         model = inference.config.analysis_model
@@ -76,7 +90,7 @@ class JapaneseStudy:
         result, timing = await inference.chat(model, messages, json_output=schema, max_tokens=384)
         try:
             explanation = json.loads(result)['explanation']
-            if not isinstance(explanation, str) or not explanation.strip():
+            if not isinstance(explanation, str) or not explanation.strip() or not explanation.rstrip().endswith(('.', '!', '?', '。')):
                 raise ValueError()
         except (ValueError, KeyError, TypeError):
             raise ServiceError('invalid_model_output', 'The analysis model returned an invalid explanation.', 502)

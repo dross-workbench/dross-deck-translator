@@ -5,6 +5,10 @@ import io
 import json
 import sqlite3
 import threading
+import base64
+from pathlib import Path
+from PIL import Image
+from .inference import ServiceError
 from datetime import datetime, timezone
 
 
@@ -12,6 +16,7 @@ class VocabularyStore:
     def __init__(self, data_dir):
         data_dir.mkdir(parents=True, exist_ok=True)
         self.path = data_dir/'vocabulary.db'
+        self.media = data_dir/'screenshots'
         self.lock = threading.Lock()
         with self.connect() as db:
             db.executescript('''
@@ -35,13 +40,58 @@ class VocabularyStore:
         key = hashlib.sha256(json.dumps([item.game_id, item.dictionary_form, item.reading], ensure_ascii=False).encode()).hexdigest()[:32]
         now = datetime.now(timezone.utc).isoformat()
         with self.lock, self.connect() as db:
+            existing = db.execute('SELECT vocabulary_id FROM encounters WHERE event_id=?', (item.event_id,)).fetchone()
+            if existing and existing[0] != key:
+                raise ServiceError('event_conflict', 'This save event was already used for another word.', 409)
+            screenshot = None
+            if item.screenshot_base64:
+                try:
+                    raw = base64.b64decode(item.screenshot_base64, validate=True)
+                    if len(raw) > 2_000_000:
+                        raise ValueError()
+                    with Image.open(io.BytesIO(raw)) as image:
+                        if image.format not in ('PNG', 'JPEG') or image.width*image.height > 4_000_000:
+                            raise ValueError()
+                        image.load()
+                        clean = io.BytesIO()
+                        image.convert('RGB').save(clean, format='PNG')
+                    screenshot = hashlib.sha256(item.event_id.encode()).hexdigest()+'.png'
+                    self.media.mkdir(exist_ok=True)
+                    (self.media/screenshot).write_bytes(clean.getvalue())
+                except (ValueError, OSError, Image.DecompressionBombError):
+                    raise ServiceError('invalid_screenshot', 'Use a PNG or JPEG screenshot under 2 MB and 4 megapixels.', 422)
             db.execute('INSERT OR IGNORE INTO vocabulary(id,game_id,game_title,word,dictionary_form,reading,meaning,first_seen,last_seen) VALUES(?,?,?,?,?,?,?,?,?)',
                        (key, item.game_id, item.game_title, item.word, item.dictionary_form, item.reading, item.meaning, now, now))
-            inserted = db.execute('INSERT OR IGNORE INTO encounters(event_id,vocabulary_id,sentence,translation,encountered_at) VALUES(?,?,?,?,?)',
-                                  (item.event_id, key, item.sentence, item.sentence_translation, now)).rowcount
+            inserted = db.execute('INSERT OR IGNORE INTO encounters(event_id,vocabulary_id,sentence,translation,encountered_at,screenshot) VALUES(?,?,?,?,?,?)',
+                                  (item.event_id, key, item.sentence, item.sentence_translation, now, screenshot)).rowcount
             if inserted:
                 db.execute('UPDATE vocabulary SET encounters=encounters+1,last_seen=? WHERE id=?', (now, key))
             return dict(db.execute('SELECT * FROM vocabulary WHERE id=?', (key,)).fetchone())
+
+    def record_encounters(self, request, study):
+        with self.connect() as db:
+            saved = [dict(r) for r in db.execute('SELECT * FROM vocabulary WHERE game_id=?', (request.game_id,))]
+        if not saved:
+            return 0
+        now, count = datetime.now(timezone.utc).isoformat(), 0
+        for segment in request.segments:
+            analysis = study.analyze(segment.text)
+            lemmas = {t['dictionary_form'] for t in analysis['tokens']}
+            with self.lock, self.connect() as db:
+                for word in saved:
+                    if word['dictionary_form'] not in lemmas:
+                        continue
+                    event = hashlib.sha256((request.event_id+word['id']).encode()).hexdigest()
+                    inserted = db.execute('INSERT OR IGNORE INTO encounters(event_id,vocabulary_id,sentence,translation,encountered_at) VALUES(?,?,?,?,?)',
+                                          (event, word['id'], segment.text, '', now)).rowcount
+                    if inserted:
+                        db.execute('UPDATE vocabulary SET encounters=encounters+1,last_seen=? WHERE id=?', (now, word['id']))
+                        count += 1
+        return count
+
+    def set_anki_id(self, key, note_id):
+        with self.connect() as db:
+            db.execute('UPDATE vocabulary SET anki_id=? WHERE id=?', (note_id, key))
 
     def list(self, game_id=None):
         with self.connect() as db:
@@ -77,4 +127,9 @@ class VocabularyStore:
             db.commit()
             db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
             db.execute('VACUUM')
+            if self.media.exists():
+                for path in self.media.glob('*.png'):
+                    # Generated hash names only; never accept a client file path.
+                    if len(path.stem) == 64 and all(c in '0123456789abcdef' for c in path.stem):
+                        path.unlink()
             return count

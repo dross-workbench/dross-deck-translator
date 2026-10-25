@@ -304,6 +304,10 @@ export class GameTranslatorLogic {
         });
     }
 
+    private studyImage = '';
+
+    studyLastScreen = async (): Promise<boolean> => openStudy(this.dismiss, this.studyImage);
+
     dismiss = (): void => {
         this.currentRunId++;
         this.isProcessing = false;
@@ -387,8 +391,9 @@ export class GameTranslatorLogic {
 
                 this.imageState.showTranslatedImage(result.base64, translatedRegions);
                 if (this.translationProvider === 'dross') {
-                    const mode = await call<[string, string], string>('get_setting', 'dross_mode', 'translate');
-                    if (!isCancelled() && mode === 'study') await openStudy(this.dismiss);
+                    const options = await call<[], any>('get_dross_settings');
+                    this.studyImage = options.dross_allow_screenshots ? result.base64 : '';
+                    if (!isCancelled() && options.dross_mode === 'study') await this.studyLastScreen();
                 }
             } else {
                 // No text found, show message

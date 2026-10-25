@@ -1,7 +1,6 @@
 import { useEffect, useState, VFC } from 'react';
 import { call } from '@decky/api';
-import { PanelSection, PanelSectionRow, TextField, ButtonItem, ToggleField, Dropdown, Field, SliderField } from '@decky/ui';
-import { openStudy } from './StudyOverlay';
+import { PanelSection, PanelSectionRow, TextField, ButtonItem, ToggleField, Dropdown, Field, SliderField, showModal, ConfirmModal } from '@decky/ui';
 import { GameTranslatorLogic } from './Translator';
 
 export const DrossSettings: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) => {
@@ -29,7 +28,7 @@ export const DrossSettings: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) =>
     return <>
         <PanelSection title="Dross Local AI">
             <PanelSectionRow><Field label="Mode"><Dropdown selectedOption={settings.dross_mode || 'translate'} rgOptions={[{ label: 'Translate', data: 'translate' }, { label: 'Study', data: 'study' }]} onChange={o => { save('dross_mode', o.data).catch(() => setStatus('Save failed')); }} /></Field></PanelSectionRow>
-            <PanelSectionRow><ButtonItem onClick={async () => { if (!await openStudy(logic.dismiss)) setStatus('Translate a screen first, then open Study.'); }}>Study last screen</ButtonItem></PanelSectionRow>
+            <PanelSectionRow><ButtonItem onClick={async () => { if (!await logic.studyLastScreen()) setStatus('Translate a screen first, then open Study.'); }}>Study last screen</ButtonItem></PanelSectionRow>
             <PanelSectionRow><TextField label="Workbench gateway" value={settings.dross_server_url || ''} onChange={e => setSettings(s => ({ ...s, dross_server_url: e.target.value }))} /></PanelSectionRow>
             <PanelSectionRow><TextField label="Pairing token" bIsPassword value={token} onChange={e => setToken(e.target.value)} /></PanelSectionRow>
             <PanelSectionRow><TextField label="Certificate SHA-256" value={settings.dross_certificate_sha256 || ''} onChange={e => setSettings(s => ({ ...s, dross_certificate_sha256: e.target.value }))} /></PanelSectionRow>
@@ -42,9 +41,11 @@ export const DrossSettings: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) =>
             {toggle('dross_local_only', 'Local providers only', 'Block cloud OCR and translation. Keep enabled for zero commercial AI usage.')}
             {toggle('dross_save_text', 'Save translation cache', 'Off keeps Dross translations in memory. Turning off deletes the disk cache.')}
             {toggle('dross_allow_screenshots', 'Allow saved screenshots', 'Explicit vocabulary saves only. Normal translation always sends text.')}
+            {toggle('dross_track_encounters', 'Count saved word encounters', 'Save later example sentences only for words you already chose to save.')}
             {toggle('dross_allow_http', 'Allow unencrypted LAN HTTP', 'Token and dialogue can be read on this network. HTTPS is preferred.')}
             <PanelSectionRow><ButtonItem onClick={async () => { await call('clear_dross_session'); setStatus('Session context and memory cache cleared'); }}>Clear session context</ButtonItem></PanelSectionRow>
             <PanelSectionRow><ButtonItem onClick={async () => { await call('clear_translation_cache'); await call('clear_dross_session'); setStatus('Translation caches cleared'); }}>Delete translation cache</ButtonItem></PanelSectionRow>
+            <PanelSectionRow><ButtonItem onClick={() => showModal(<ConfirmModal strTitle="Delete Workbench vocabulary?" strDescription="Delete all saved words, example history and screenshots from Workbench. Exported files and existing Anki cards remain." strOKButtonText="Delete history" onOK={async () => { const r = await call<[], any>('delete_dross_history'); setStatus(r.error ? r.message : `Deleted ${r.deleted} saved words`); }} />)}>Delete saved history</ButtonItem></PanelSectionRow>
         </PanelSection>
     </>;
 };
