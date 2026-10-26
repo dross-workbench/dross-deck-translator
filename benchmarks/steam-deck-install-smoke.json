@@ -1,0 +1,217 @@
+{
+  "platform": "Steam Deck LCD; installed Chrome Screen AI and Dross provider; authenticated Workbench connection",
+  "scope": "Synthetic fixtures, no game capture, frontend rendering or physical button press",
+  "cases": [
+    {
+      "case": "normal",
+      "expected": "この先は危険だ。一人で行くな。",
+      "detected": "この先は危険だ。一人で行くな。",
+      "normalized_exact": true,
+      "ocr_ms": 940,
+      "translation_ms": 13912,
+      "repeat_ms": 151,
+      "regions": [
+        {
+          "text": "この先は危険だ。一人で行くな。",
+          "rect": {
+            "left": 93,
+            "top": 552,
+            "right": 487,
+            "bottom": 581
+          },
+          "confidence": 0.999427318572998,
+          "isDialog": false,
+          "drossTranslation": "The path ahead is dangerous. Do not go alone.",
+          "englishTranslation": "The path ahead is dangerous. Do not go alone.",
+          "translatedText": "The path ahead is dangerous. Do not go alone.",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    },
+    {
+      "case": "vertical",
+      "expected": "約束を忘れないで。",
+      "detected": "「約束を忘れないで。",
+      "normalized_exact": false,
+      "ocr_ms": 930,
+      "translation_ms": 3014,
+      "repeat_ms": 307,
+      "regions": [
+        {
+          "text": "「約束を忘れないで。",
+          "rect": {
+            "left": 1084,
+            "top": 97,
+            "right": 1112,
+            "bottom": 373
+          },
+          "confidence": 0.9306405782699585,
+          "isDialog": false,
+          "drossTranslation": "\"Don't forget your promises.\"",
+          "englishTranslation": "\"Don't forget your promises.\"",
+          "translatedText": "\"Don't forget your promises.\"",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    },
+    {
+      "case": "partial",
+      "expected": "もし、あの時……",
+      "detected": "もし、あの時……………",
+      "normalized_exact": false,
+      "ocr_ms": 924,
+      "translation_ms": 2659,
+      "repeat_ms": 307,
+      "regions": [
+        {
+          "text": "もし、あの時……………",
+          "rect": {
+            "left": 92,
+            "top": 556,
+            "right": 310,
+            "bottom": 579
+          },
+          "confidence": 0.8474935293197632,
+          "isDialog": false,
+          "drossTranslation": "If only, back then…",
+          "englishTranslation": "If only, back then…",
+          "translatedText": "If only, back then…",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    },
+    {
+      "case": "mixed_ui",
+      "expected": "HP 120 / セーブしますか？",
+      "detected": "HP 120 / セーブしますか?",
+      "normalized_exact": true,
+      "ocr_ms": 939,
+      "translation_ms": 3464,
+      "repeat_ms": 308,
+      "regions": [
+        {
+          "text": "HP 120 / セーブしますか?",
+          "rect": {
+            "left": 50,
+            "top": 61,
+            "right": 388,
+            "bottom": 89
+          },
+          "confidence": 0.999438464641571,
+          "isDialog": true,
+          "drossTranslation": "HP 120 / Would you like to save?",
+          "englishTranslation": "HP 120 / Would you like to save?",
+          "translatedText": "HP 120 / Would you like to save?",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    },
+    {
+      "case": "stylized",
+      "expected": "おいっ！待てってば！！",
+      "detected": "「おいっ! 待てってば!!",
+      "normalized_exact": false,
+      "ocr_ms": 941,
+      "translation_ms": 2519,
+      "repeat_ms": 123,
+      "regions": [
+        {
+          "text": "「おいっ! 待てってば!!",
+          "rect": {
+            "left": 80,
+            "top": 550,
+            "right": 383,
+            "bottom": 580
+          },
+          "confidence": 0.9783120155334473,
+          "isDialog": true,
+          "drossTranslation": "\"Hey! Stop right there!\"",
+          "englishTranslation": "\"Hey! Stop right there!\"",
+          "translatedText": "\"Hey! Stop right there!\"",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    },
+    {
+      "case": "repeated",
+      "expected": "約束を忘れないで。",
+      "detected": "「約束を忘れないで。",
+      "normalized_exact": false,
+      "ocr_ms": 937,
+      "translation_ms": 3159,
+      "repeat_ms": 513,
+      "regions": [
+        {
+          "text": "「約束を忘れないで。",
+          "rect": {
+            "left": 80,
+            "top": 551,
+            "right": 320,
+            "bottom": 580
+          },
+          "confidence": 0.9572136998176575,
+          "isDialog": false,
+          "drossTranslation": "\"Don't forget your promises.\"",
+          "englishTranslation": "\"Don't forget your promises.\"",
+          "translatedText": "\"Don't forget your promises.\"",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    },
+    {
+      "case": "poor_ocr",
+      "expected": "王城へ…行□な？",
+      "detected": "王城へ…行口な?",
+      "normalized_exact": false,
+      "ocr_ms": 931,
+      "translation_ms": 2652,
+      "repeat_ms": 308,
+      "regions": [
+        {
+          "text": "王城へ…行口な?",
+          "rect": {
+            "left": 88,
+            "top": 555,
+            "right": 303,
+            "bottom": 578
+          },
+          "confidence": 0.9846404790878296,
+          "isDialog": true,
+          "drossTranslation": "To the palace… is that the entrance?",
+          "englishTranslation": "To the palace… is that the entrance?",
+          "translatedText": "To the palace… is that the entrance?",
+          "drossSourceLanguage": "ja",
+          "drossTargetLanguage": "en",
+          "drossDetectionConfidence": null,
+          "drossWarning": null,
+          "drossFallback": false
+        }
+      ]
+    }
+  ],
+  "translation_model": "translategemma:4b"
+}

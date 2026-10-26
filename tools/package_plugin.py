@@ -21,8 +21,12 @@ out = root/'out'
 out.mkdir(exist_ok=True)
 target = out/'Dross.Deck.Translator.zip'
 with zipfile.ZipFile(target, 'w', compression=zipfile.ZIP_DEFLATED) as z:
-    for file in ['main.py', 'plugin.json', 'package.json', 'LICENSE', 'THIRD_PARTY_LICENSES']:
+    for file in ['main.py', 'plugin.json', 'LICENSE', 'THIRD_PARTY_LICENSES']:
         z.write(root/file, 'dross-deck-translator/'+file)
+    # The verified dependency archive is already bundled below. Leaving
+    # remote_binary here makes Decky's installer download it a second time.
+    installed_package = {k: v for k, v in package.items() if k != 'remote_binary'}
+    z.writestr('dross-deck-translator/package.json', json.dumps(installed_package, indent=2))
     for folder in ['dist', 'py_modules/providers']:
         for p in (root/folder).rglob('*'):
             if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc':

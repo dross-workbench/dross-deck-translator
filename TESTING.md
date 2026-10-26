@@ -1,6 +1,6 @@
 # Validation and remaining device work
 
-This is a functional development build, not a verified Steam Deck release.
+This is an installed development build. On-device synthetic OCR/translation checks passed; in-game capture, overlay interaction and physical controller operation remain to be verified.
 
 ## Automated checks
 
@@ -19,6 +19,21 @@ pnpm run build
 ```
 
 ## Workbench measurements
+
+### Steam Deck installation check, 2026-10-26
+
+Installed version 0.2.0 through the existing Decky Loader 3.3.0 installer, paired its gateway settings, and downloaded Chrome Screen AI (128,201,445 bytes). The dependency archive is bundled and verified; the ZIP omits its `remote_binary` declaration to prevent Decky downloading that same archive again. The plugin's installed backend reported healthy local translation/analysis models and an active built-in controller HID monitor with no read errors. L5 is configured explicitly, held for 1000 ms to translate and 500 ms to dismiss. External evdev gamepad support was unavailable in this Decky runtime; the Deck's built-in HID interface was working.
+
+The actual installed backend recognized a synthetic Japanese line and returned “The path ahead is dangerous. Do not go alone.” A full seven-case run used the installed OCR and translation providers with the bundled Python 3.13 on the Deck, avoiding contention with Steam's single Decky management WebSocket. The [sanitized report](benchmarks/steam-deck-install-smoke.json) contains only authored fixtures. No game screenshots or private dialogue were collected.
+
+- On-device Chrome Screen AI took **0.924–0.941 seconds** per synthetic 1280×800 image.
+- The first Workbench translation took **13.912 seconds**; later translations took **2.519–3.464 seconds**. Cached repeats took **123–513 ms**, including the encrypted network connection.
+- All seven scenes returned text and translations and retained rectangle coordinates. Two matched the source exactly after width/space normalization. Several scenes gained an opening quote or extra ellipsis; the damaged square was recognized as the kanji 口. Such OCR substitutions can mislead translation and do not reliably trigger the damaged-text marker.
+- The normal line was also exercised through Decky's real plugin RPC. These checks do not validate screenshot capture from a running game, frontend overlay placement, actual button presses, focus isolation or battery usage.
+
+Run `tools/steam_deck_smoke.py` with the installed plugin's `bin/python313/python/bin/python3.13`. Pass `--fixtures` pointing to a temporary directory containing `tests/fixtures/dialogue.json` and the synthetic PNGs from `tools/benchmark_ocr.py`, plus `--output` for the report. It reads private pairing settings locally, never prints credentials, and disables encounter tracking in its test provider. The installed plugin's normal settings are preserved.
+
+The prepared connection uses pinned HTTPS through an SSH reverse forward bound to Deck loopback. Workbench sign-in tasks are registered for the gateway and link. Terminating only the forwarding SSH process confirmed automatic reconnection and a successful plugin health check afterward; persistence across actual machine reboots remains untested. SteamOS SSH was started, but its boot service was disabled at inspection; enabling it after reboot requires the documented Konsole command.
 
 ### Multilingual update, 2026-10-26
 
@@ -60,7 +75,7 @@ The fixture set has six short translation requests (including a repeat) and one 
 
 [Raw synthetic results](benchmarks/) include inputs, outputs, timing and memory; [summary.json](benchmarks/summary.json) contains computed statistics. Outputs were inspected for meaning, negation, incompleteness and invented information. This small qualitative comparison is not a formal accuracy score or native-speaker evaluation. Both 4B models inferred possessors for 約束 where Japanese leaves them implicit. Multi-region screens take longer because regions are translated sequentially.
 
-Earlier Qwen runs with ambiguous JSON input failed schema validation. Final v3 runs use an explicit English instruction and constrained response schema. Earlier memory readings that omitted workers were discarded. The real plugin HTTPS client was tested against the gateway with its token and certificate pin: Qwen3 4B returned English with the original rectangle in 11.56 seconds cold; a repeat took 127 ms. Live Sudachi/JMdict analysis, deterministic grammar, vocabulary saving and targeted cleanup passed. No commercial translation endpoint participated. The gateway currently runs on loopback; a LAN rule and Deck pairing are still required.
+Earlier Qwen runs with ambiguous JSON input failed schema validation. Final v3 runs use an explicit English instruction and constrained response schema. Earlier memory readings that omitted workers were discarded. The real plugin HTTPS client was tested against the gateway with its token and certificate pin: Qwen3 4B returned English with the original rectangle in 11.56 seconds cold; a repeat took 127 ms. Live Sudachi/JMdict analysis, deterministic grammar, vocabulary saving and targeted cleanup passed. No commercial translation endpoint participated. Pairing was pending at that evaluation; the subsequent SSH installation above completed it.
 
 Grammar trials exposed errors: Qwen 1.7B took 6.5 s but ended mid-explanation; 4B took 24.0 s and misdescribed ないで. Common constructions now use deterministic notes and incomplete model output is rejected. Other explanations remain tentative. Readings/definitions always come from Sudachi/JMdict.
 
