@@ -1,0 +1,9 @@
+[
+  {"case":"normal", "text":"この先は危険だ。一人で行くな。", "reference":"It's dangerous ahead. Don't go alone.", "rect":{"left":80,"top":540,"right":1100,"bottom":680}},
+  {"case":"vertical", "text":"約束を忘れないで。", "reference":"Don't forget our promise.", "rect":{"left":1080,"top":100,"right":1160,"bottom":620}},
+  {"case":"partial", "text":"もし、あの時……", "reference":"If, back then...", "rect":{"left":80,"top":540,"right":1100,"bottom":680}},
+  {"case":"mixed_ui", "text":"HP 120 / セーブしますか？", "reference":"HP 120 / Save the game?", "rect":{"left":40,"top":50,"right":700,"bottom":140}},
+  {"case":"stylized", "text":"おいっ！待てってば！！", "reference":"Hey! I said wait!", "rect":{"left":80,"top":540,"right":1100,"bottom":680}},
+  {"case":"repeated", "text":"約束を忘れないで。", "reference":"Don't forget our promise.", "rect":{"left":80,"top":540,"right":1100,"bottom":680}},
+  {"case":"poor_ocr", "text":"王城へ…行□な？", "reference":"Uncertain OCR: must not invent the missing character.", "rect":{"left":80,"top":540,"right":1100,"bottom":680}}
+]

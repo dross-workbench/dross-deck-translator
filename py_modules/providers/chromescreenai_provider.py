@@ -35,7 +35,7 @@ class ChromeScreenAIProvider(OCRProvider):
     # rest of the plugin supports plus 'auto'.
     SUPPORTED_LANGUAGES = [
         'auto', 'ar', 'bg', 'zh-CN', 'zh-TW', 'hr', 'cs', 'da', 'nl', 'no', 'en',
-        'fi', 'fr', 'de', 'el', 'hi', 'hu', 'it', 'ja', 'ko', 'pl', 'pt',
+        'fi', 'fr', 'de', 'el', 'hi', 'hu', 'id', 'it', 'ja', 'ko', 'pl', 'pt',
         'ro', 'ru', 'es', 'sv', 'th', 'tr', 'uk', 'vi',
     ]
 
@@ -47,7 +47,7 @@ class ChromeScreenAIProvider(OCRProvider):
     ):
         self._plugin_dir = plugin_dir or os.environ.get(
             "DECKY_PLUGIN_DIR",
-            "/home/deck/homebrew/plugins/decky-translator",
+            "/home/deck/homebrew/plugins/dross-deck-translator",
         )
         # model_dir holds the .so and TFLite files; owned by ScreenAIDownloader.
         self._model_dir = model_dir

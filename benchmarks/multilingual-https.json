@@ -1,0 +1,72 @@
+{
+  "transport": "authenticated HTTPS with certificate pinning",
+  "cases": [
+    {
+      "source": "auto",
+      "target": "en",
+      "text": "約束を忘れないで。",
+      "detected": "ja",
+      "translation": "Don't forget your promises.",
+      "warning": null,
+      "wall_ms": 12633,
+      "repeat_ms": 105,
+      "rectangle_preserved": true
+    },
+    {
+      "source": "auto",
+      "target": "en",
+      "text": "Não abra a porta até eu voltar.",
+      "detected": "pt",
+      "translation": "Please do not open the door until I return.",
+      "warning": null,
+      "wall_ms": 2540,
+      "repeat_ms": 82,
+      "rectangle_preserved": true
+    },
+    {
+      "source": "id",
+      "target": "en",
+      "text": "Jangan buka pintu sampai aku kembali.",
+      "detected": "id",
+      "translation": "Please do not open the door until I return.",
+      "warning": null,
+      "wall_ms": 2415,
+      "repeat_ms": 89,
+      "rectangle_preserved": true
+    },
+    {
+      "source": "auto",
+      "target": "en",
+      "text": "Jangan buka pintu sampai aku kembali.",
+      "detected": "und",
+      "translation": "Jangan buka pintu sampai aku kembali.",
+      "warning": "Language is uncertain; select the input language manually.",
+      "wall_ms": 191,
+      "repeat_ms": 99,
+      "rectangle_preserved": true
+    },
+    {
+      "source": "ja",
+      "target": "pt",
+      "text": "約束を忘れないで。",
+      "detected": "ja",
+      "translation": "Não se esqueça do nosso acordo.",
+      "warning": null,
+      "wall_ms": 2834,
+      "repeat_ms": 93,
+      "rectangle_preserved": true
+    },
+    {
+      "source": "ja",
+      "target": "id",
+      "text": "約束を忘れないで。",
+      "detected": "ja",
+      "translation": "Jangan lupa janji yang telah dibuat.",
+      "warning": null,
+      "wall_ms": 2775,
+      "repeat_ms": 99,
+      "rectangle_preserved": true
+    }
+  ],
+  "model": "translategemma:4b"
+}

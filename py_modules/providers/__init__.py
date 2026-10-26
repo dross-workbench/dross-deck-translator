@@ -23,6 +23,7 @@ from .rapidocr_provider import RapidOCRProvider
 from .chromescreenai_provider import ChromeScreenAIProvider
 from .gemini_vision import GeminiVisionProvider
 from .ct2_translate import CT2TranslateProvider
+from .dross_local import DrossLocalProvider
 from .nllb_downloader import NLLBDownloader
 from .screenai_downloader import ScreenAIDownloader
 from .rapidocr_downloader import RapidOCRDownloader
@@ -395,13 +396,17 @@ class ProviderManager:
             # Use translation provider preference (independent of OCR choice)
             if self._translation_provider_preference == "googlecloud":
                 provider_type = ProviderType.GOOGLE
+            elif self._translation_provider_preference == "dross":
+                provider_type = ProviderType.DROSS
             elif self._translation_provider_preference == "ct2":
                 provider_type = ProviderType.CT2
             else:
                 provider_type = ProviderType.FREE_GOOGLE
 
         if provider_type not in self._translation_providers:
-            if provider_type == ProviderType.FREE_GOOGLE:
+            if provider_type == ProviderType.DROSS:
+                self._translation_providers[provider_type] = DrossLocalProvider()
+            elif provider_type == ProviderType.FREE_GOOGLE:
                 self._translation_providers[provider_type] = FreeTranslateProvider()
             elif provider_type == ProviderType.GOOGLE:
                 self._translation_providers[provider_type] = GoogleTranslateProvider(

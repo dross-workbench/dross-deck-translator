@@ -66,6 +66,7 @@ class RapidOCRProvider(OCRProvider):
         'es': 'latin',
         'it': 'latin',
         'pt': 'latin',
+        'id': 'latin',
         'nl': 'latin',
         'no': 'latin',
         'pl': 'latin',
@@ -87,7 +88,7 @@ class RapidOCRProvider(OCRProvider):
 
     SUPPORTED_LANGUAGES = [
         'auto', 'en', 'zh-CN', 'zh-TW', 'ja', 'ko',
-        'de', 'fr', 'es', 'it', 'pt', 'nl', 'no', 'pl', 'tr', 'ro', 'vi', 'fi',
+        'de', 'fr', 'es', 'it', 'pt', 'id', 'nl', 'no', 'pl', 'tr', 'ro', 'vi', 'fi',
         'hr', 'cs', 'hu', 'sv', 'da',
         'ru', 'uk', 'bg', 'el', 'th'
     ]
@@ -112,7 +113,7 @@ class RapidOCRProvider(OCRProvider):
         """
         self._plugin_dir = plugin_dir or os.environ.get(
             "DECKY_PLUGIN_DIR",
-            "/home/deck/homebrew/plugins/decky-translator"
+            "/home/deck/homebrew/plugins/dross-deck-translator"
         )
         self._models_dir = models_dir or os.path.join(self._plugin_dir, LEGACY_MODELS_DIR)
         self._min_confidence = max(0.0, min(1.0, min_confidence))

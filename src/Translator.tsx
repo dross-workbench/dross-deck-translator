@@ -3,15 +3,19 @@
 import { call, toaster } from "@decky/api";
 import { Router } from "@decky/ui";
 import { TextRecognizer, NetworkError, ApiKeyError, RateLimitError, ModelNotAvailableError } from "./TextRecognizer";
-import { TextTranslator } from "./TextTranslator";
+import { TextTranslator, TranslatedRegion } from "./TextTranslator";
 import { Input, InputMode, ActionType, ProgressInfo } from "./Input";
 import { ImageState } from "./Overlay";
+import { openStudy } from './StudyOverlay';
+import { ImmersionLoop } from './ImmersionLoop';
+import { languageName } from './DrossLanguages';
 import { logger } from "./Logger";
 
 // Screenshot response interface
 export interface ScreenshotResponse {
     path: string;
     base64: string;
+    fingerprint?: string;
 }
 
 // Main app logic
@@ -27,6 +31,12 @@ export class GameTranslatorLogic {
     private pauseGameOnOverlay: boolean = false;
     private hideIdenticalTranslations: boolean = false;
     private currentRunId: number = 0;
+    private immersion = new ImmersionLoop();
+    private drossMode = 'translate';
+    private lastImmersionFrame = '';
+    private lastImmersionText = '';
+    private lastImmersionGame = '';
+    private lastImmersionRegions: TranslatedRegion[] = [];
 
     // Provider settings for upfront validation
     private ocrProvider: string = "rapidocr";
@@ -74,7 +84,8 @@ export class GameTranslatorLogic {
                 if (this.pauseGameOnOverlay) {
                     this.pauseCurrentGame().catch(err => logger.error('Translator', 'Pause failed', err));
                 }
-                this.takeScreenshotAndTranslate().catch(err => logger.error('Translator', 'Screenshot failed', err));
+                if (this.drossMode === 'immersion') void this.startImmersion();
+                else this.takeScreenshotAndTranslate().catch(err => logger.error('Translator', 'Screenshot failed', err));
             }
         });
 
@@ -284,6 +295,8 @@ export class GameTranslatorLogic {
 
     // Clean up resources when plugin is unmounted
     cleanup(): void {
+        this.dismiss();
+        this.studyImage = '';
         if (this.shortcutInput) {
             this.shortcutInput.unregister();
         }
@@ -303,7 +316,43 @@ export class GameTranslatorLogic {
         });
     }
 
+    private studyImage = '';
+
+    setDrossMode(mode: string): void {
+        this.drossMode = mode;
+        if (mode !== 'immersion' && this.immersion.active) this.stopImmersion();
+    }
+
+    startImmersion = async (): Promise<void> => {
+        if (!this.enabled || this.translationProvider !== 'dross') {
+            await this.notify('Select Dross Local AI and enable the plugin first', 3000); return;
+        }
+        if (this.pauseGameOnOverlay) {
+            await this.notify('Disable Pause Game on Overlay before starting immersion', 3500); return;
+        }
+        const options = await call<[], any>('get_dross_settings');
+        this.dismiss();
+        this.lastImmersionFrame = ''; this.lastImmersionText = ''; this.lastImmersionRegions = [];
+        this.immersion.start(Math.max(5, Math.min(60, Number(options.dross_poll_seconds) || 15))*1000, async () => {
+            if (!Router.MainRunningApp?.appid) { this.stopImmersion(); return; }
+            await this.takeScreenshotAndTranslate(true);
+        });
+    };
+
+    stopImmersion = (): void => {
+        this.immersion.stop();
+        this.currentRunId++;
+        this.isProcessing = false;
+        this.imageState.hideImage();
+        this.lastImmersionFrame = ''; this.lastImmersionText = ''; this.lastImmersionRegions = [];
+    };
+
+    isImmersionActive = (): boolean => this.immersion.active;
+
+    studyLastScreen = async (): Promise<boolean> => openStudy(this.dismiss, this.studyImage);
+
     dismiss = (): void => {
+        this.immersion.stop();
         this.currentRunId++;
         this.isProcessing = false;
         if (this.imageState.isVisible()) {
@@ -312,7 +361,7 @@ export class GameTranslatorLogic {
         }
     }
 
-    takeScreenshotAndTranslate = async (): Promise<void> => {
+    takeScreenshotAndTranslate = async (automatic = false): Promise<void> => {
         // If already processing or disabled, return
         if (this.isProcessing || !this.enabled) {
             logger.debug('Translator', 'Already processing a screenshot or plugin disabled, skipping');
@@ -323,14 +372,27 @@ export class GameTranslatorLogic {
 
         const runId = ++this.currentRunId;
         const isCancelled = (): boolean => runId !== this.currentRunId;
+        let capturedPath = '';
 
         try {
             this.isProcessing = true;
+            if (automatic) {
+                this.imageState.hideImage();
+                // Let Steam composite a clean game frame before capture.
+                await new Promise(resolve => setTimeout(resolve, 200));
+                if (isCancelled()) return;
+            }
 
             // Take screenshot FIRST while screen is clean (no overlay visible)
             const appName = Router.MainRunningApp?.display_name || "";
+            const gameId = String(Router.MainRunningApp?.appid || appName || 'unknown');
+            if (automatic && gameId !== this.lastImmersionGame) {
+                this.lastImmersionFrame = ''; this.lastImmersionText = ''; this.lastImmersionRegions = [];
+                this.lastImmersionGame = gameId;
+            }
             logger.info('Translator', `Taking new screenshot for: ${appName}`);
             const result = await call<[string], ScreenshotResponse>('take_screenshot', appName);
+            capturedPath = result?.path || '';
 
             if (isCancelled()) {
                 logger.debug('Translator', 'Translation cancelled before screenshot processed');
@@ -345,12 +407,18 @@ export class GameTranslatorLogic {
 
             logger.debug('Translator', `Screenshot captured, path: ${result.path}, base64 length: ${result.base64.length}`);
 
-            this.imageState.startLoading("Processing");
-            this.imageState.showImage(result.base64);
+            if (automatic && result.fingerprint && result.fingerprint === this.lastImmersionFrame) {
+                if (this.lastImmersionRegions.length) this.imageState.showTranslatedImage(result.base64, this.lastImmersionRegions);
+                return;
+            }
+            if (!automatic) {
+                this.imageState.startLoading("Processing");
+                this.imageState.showImage(result.base64);
+            }
             const recognizingStep = this.ocrProvider === 'gemini_vision'
                 ? "Recognizing and Translating"
                 : "Recognizing";
-            this.imageState.updateProcessingStep(recognizingStep, false, this.ocrMethodHint());
+            if (!automatic) this.imageState.updateProcessingStep(recognizingStep, false, this.ocrMethodHint());
 
             const textRegions = await this.textRecognizer.recognizeTextFile(result.path);
             if (isCancelled()) {
@@ -360,31 +428,65 @@ export class GameTranslatorLogic {
             logger.info('Translator', `Found ${textRegions.length} text regions`);
 
             if (textRegions.length > 0) {
+                const signature = JSON.stringify(textRegions.map(r => r.text));
+                if (automatic && signature === this.lastImmersionText) {
+                    const reused = textRegions.map((r, i) => ({ ...this.lastImmersionRegions[i], ...r, drossLive: true }));
+                    this.lastImmersionFrame = result.fingerprint || '';
+                    this.imageState.showTranslatedImage(result.base64, reused);
+                    return;
+                }
                 const alreadyTranslated = textRegions.every(r => r.translatedText);
-                if (!alreadyTranslated) {
+                if (!alreadyTranslated && !automatic) {
                     this.imageState.updateProcessingStep("Translating text", false, this.translationMethodHint());
                 }
 
                 // Translate text (skips backend call if already translated by OCR provider)
-                let translatedRegions = await this.textTranslator.translateText(textRegions);
+                let translatedRegions = await this.textTranslator.translateText(textRegions, gameId);
                 if (isCancelled()) {
                     logger.debug('Translator', 'Translation cancelled after translation step');
                     return;
                 }
+                if (translatedRegions.some(r => r.drossFallback)) this.notify('Using on-device NLLB fallback', 3000);
+                if (this.translationProvider === 'dross' && !automatic) {
+                    const uncertain = translatedRegions.filter(r => r.drossWarning).length;
+                    if (uncertain) this.notify('Some text needs a language choice', 4500, `${uncertain} region(s) left unchanged. Select Input Language manually in Translation settings.`);
+                    else if (this.textTranslator.getInputLanguage() === 'auto') {
+                        const languages = [...new Set(translatedRegions.map(r => r.drossSourceLanguage).filter((l): l is string => !!l && l !== 'und'))];
+                        if (languages.length) this.notify(`Detected: ${languages.map(languageName).join(', ')}`, 2200);
+                    }
+                }
                 logger.info('Translator', `Translation complete: ${translatedRegions.length} regions`);
 
-                if (this.hideIdenticalTranslations) {
+                if (this.hideIdenticalTranslations && !automatic) {
                     const before = translatedRegions.length;
                     translatedRegions = translatedRegions.filter(r =>
-                        r.translatedText.trim().toLowerCase() !== r.text.trim().toLowerCase()
+                        r.drossWarning || r.translatedText.trim().toLowerCase() !== r.text.trim().toLowerCase()
                     );
                     if (translatedRegions.length < before) {
                         logger.info('Translator', `Filtered ${before - translatedRegions.length} identical translations`);
                     }
                 }
 
+                if (automatic) {
+                    translatedRegions = translatedRegions.map(r => ({ ...r, drossLive: true }));
+                    this.lastImmersionFrame = result.fingerprint || '';
+                    this.lastImmersionText = signature;
+                    this.lastImmersionRegions = translatedRegions;
+                }
+
                 this.imageState.showTranslatedImage(result.base64, translatedRegions);
+                if (this.translationProvider === 'dross') {
+                    const options = await call<[], any>('get_dross_settings');
+                    this.studyImage = options.dross_allow_screenshots ? result.base64 : '';
+                    if (!automatic && !isCancelled() && options.dross_mode === 'study' && !await this.studyLastScreen())
+                        this.notify('Study currently supports Japanese sentences only', 3500);
+                }
             } else {
+                if (automatic) {
+                    this.lastImmersionFrame = result.fingerprint || '';
+                    this.lastImmersionText = ''; this.lastImmersionRegions = [];
+                    return;
+                }
                 // No text found, show message
                 this.imageState.updateProcessingStep("No text found");
 
@@ -400,6 +502,11 @@ export class GameTranslatorLogic {
             }
 
             logger.error('Translator', 'Screenshot and translation error', error);
+            if (automatic) {
+                this.stopImmersion();
+                await this.notify('Immersion stopped', 3500, error instanceof Error ? error.message : 'Translation failed');
+                return;
+            }
 
             // Check if this is a network error
             if (error instanceof NetworkError) {
@@ -431,6 +538,7 @@ export class GameTranslatorLogic {
             }
         }
         finally {
+            if (capturedPath) void call('delete_dross_screenshot', capturedPath);
             if (!isCancelled()) {
                 this.isProcessing = false;
             }
@@ -438,6 +546,7 @@ export class GameTranslatorLogic {
     }
 
     setInputLanguage = (language: string): void => {
+        if (language !== this.getInputLanguage() && (this.immersion.active || this.isProcessing)) this.stopImmersion();
         this.textTranslator.setInputLanguage(language);
     }
 
@@ -446,6 +555,7 @@ export class GameTranslatorLogic {
     }
 
     setTargetLanguage = (language: string): void => {
+        if (language !== this.getTargetLanguage() && (this.immersion.active || this.isProcessing)) this.stopImmersion();
         this.textTranslator.setTargetLanguage(language);
     }
 

@@ -32,3 +32,21 @@ License: MIT License
 Python 3.11
 https://github.com/astral-sh/python-build-standalone
 License: Mozilla Public License 2.0
+Dross Workbench study additions (server only; installed separately)
+- SudachiPy / Sudachi.rs: Works Applications, Apache-2.0.
+  https://github.com/WorksApplications/sudachi.rs
+- SudachiDict core: Works Applications; see the dictionary distribution licenses
+  and legal notices. https://github.com/WorksApplications/SudachiDict
+- JMdict: copyright Electronic Dictionary Research and Development Group.
+  Creative Commons Attribution-ShareAlike 4.0.
+  https://www.edrdg.org/edrdg/licence.html
+  https://www.edrdg.org/jmdict/j_jmdict.html
+  No dictionary data is bundled in this plugin. The optional local index is a
+  transformation of JMdict and remains subject to its license. No endorsement
+  by EDRDG is implied. Exports containing definitions retain attribution.
+- Ollama: MIT, https://github.com/ollama/ollama
+- Lingua 2.2.0 (local language identification, Windows server only): Apache-2.0.
+  https://github.com/pemistahl/lingua-py
+- Qwen3 model weights: Apache-2.0, https://ollama.com/library/qwen3
+- TranslateGemma model weights: Gemma Terms, https://ai.google.dev/gemma/terms
+  Models are downloaded separately; their terms do not replace the GPLv3 code license.

@@ -31,6 +31,7 @@ import { SettingsProvider, useSettings } from "./SettingsContext";
 import { logger } from "./Logger";
 
 // Import tab components
+import { DrossSettings } from "./DrossSettings";
 import { TabMain, TabTranslation, TabControls } from "./tabs";
 
 // SVG Icons for tabs
@@ -199,6 +200,7 @@ const GameTranslator: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) => {
                         setCurrentTabRoute(tabID);
                     }}
                     tabs={[
+                        { title: "Dross", content: <DrossSettings logic={logic} />, id: "dross" },
                         {
                             // @ts-ignore
                             title: <IconTranslate />,
@@ -326,25 +328,26 @@ export default definePlugin(() => {
     const logic = new GameTranslatorLogic(imageState);
 
     // Add image overlay as a global component
-    routerHook.addGlobalComponent("ImageOverlay", () => (
+    routerHook.addGlobalComponent("DrossImageOverlay", () => (
         <ImageOverlay state={imageState} onDismiss={logic.dismiss}/>
     ));
 
     // Add activation indicator as a global component
-    routerHook.addGlobalComponent("HoldActivationIndicator", () => (
+    routerHook.addGlobalComponent("DrossHoldActivationIndicator", () => (
         <ActivationIndicatorWithSettings logic={logic}/>
     ));
 
     return {
-        title: <div className={staticClasses.Title}>Decky Translator</div>,
+        name: "Dross Deck Translator",
+        title: <div className={staticClasses.Title}>Dross Deck Translator</div>,
         content: <TranslatorApp logic={logic}/>,
         icon: <BsTranslate/>,
         onDismount() {
             // Clean up resources
             logic.cleanup();
             cleanupAllFontDOM();
-            routerHook.removeGlobalComponent("ImageOverlay");
-            routerHook.removeGlobalComponent("HoldActivationIndicator");
+            routerHook.removeGlobalComponent("DrossImageOverlay");
+            routerHook.removeGlobalComponent("DrossHoldActivationIndicator");
         },
         alwaysRender: true
     };

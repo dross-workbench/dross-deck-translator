@@ -380,6 +380,7 @@ export const TranslatedTextOverlay: VFC<{
     translatedTextFontFamily: string,
     translatedTextFontStyle: FontStyleOption
 }> = ({ visible, imageData, regions, loading, processingStep, processingDetail, processingIsError, translationsVisible, fontScale, allowLabelGrowth, translatedTextAlignment, translatedTextFontFamily, translatedTextFontStyle }) => {
+    const liveSubtitles = regions.some(r => r.drossLive);
     // Composition layer is handled by CompositionRequest below -- only mounted when visible
 
     // Ref to the screenshot image element
@@ -486,7 +487,7 @@ export const TranslatedTextOverlay: VFC<{
     return (
         <>
         {visible && <CompositionRequest level={UIComposition.Notification} />}
-        <div id='translation-overlay'
+        <div id='dross-translation-overlay'
              style={{
                  height: "100vh",
                  width: "100vw",
@@ -499,7 +500,7 @@ export const TranslatedTextOverlay: VFC<{
                  left: 0,
                  backgroundColor: "transparent",
                  opacity: visible ? 1 : 0,
-                 pointerEvents: visible ? "auto" : "none",
+                 pointerEvents: visible && !liveSubtitles ? "auto" : "none",
              }}>
 
             {/* Screenshot with Translations */}
@@ -520,7 +521,8 @@ export const TranslatedTextOverlay: VFC<{
                             objectFit: "contain",
                             backgroundColor: "rgba(0, 0, 0, 0.15)",
                             border: translationsVisible ? "1px solid #f44336" : "1px solid #ffc107",
-                            imageRendering: "pixelated"
+                            imageRendering: "pixelated",
+                            opacity: liveSubtitles ? 0 : 1
                         }}
                         alt="Screenshot"
                     />

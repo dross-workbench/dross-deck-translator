@@ -1,0 +1,932 @@
+{
+  "model": "qwen3:4b",
+  "note": "Authored smoke cases; references allow valid paraphrases. No native-speaker accuracy score.",
+  "warm_median_ms": 3858,
+  "samples": [
+    {
+      "name": "ja-en",
+      "source": "ja",
+      "target": "en",
+      "text": "約束を忘れないで。",
+      "reference": "Don't forget our promise.",
+      "detected": "ja",
+      "detection": {
+        "language": "ja",
+        "confidence": 1.0,
+        "status": "detected",
+        "reason": "Japanese kana script."
+      },
+      "detection_ms": 0.03,
+      "wall_ms": 14695,
+      "ollama_peak_rss_bytes": 2906181632,
+      "detector_process_rss_bytes": 48455680,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't forget your promise.",
+            "source_language": "ja",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 14621,
+            "load_ms": 10805,
+            "output_tokens": 14,
+            "generation_ms": 1601
+          }
+        ]
+      }
+    },
+    {
+      "name": "zh-en",
+      "source": "zh-CN",
+      "target": "en",
+      "text": "别忘了我们的约定。",
+      "reference": "Don't forget our promise.",
+      "detected": "zh",
+      "detection": {
+        "language": "zh",
+        "confidence": 1.0,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 32.13,
+      "wall_ms": 3989,
+      "ollama_peak_rss_bytes": 2880278528,
+      "detector_process_rss_bytes": 51257344,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't forget our agreement.",
+            "source_language": "zh-CN",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3921,
+            "load_ms": 8,
+            "output_tokens": 14,
+            "generation_ms": 1880
+          }
+        ]
+      }
+    },
+    {
+      "name": "zh-traditional-en",
+      "source": "zh-TW",
+      "target": "en",
+      "text": "在我回來之前，不要打開那扇門。",
+      "reference": "Don't open that door until I return.",
+      "detected": "zh",
+      "detection": {
+        "language": "zh",
+        "confidence": 1.0,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.64,
+      "wall_ms": 4615,
+      "ollama_peak_rss_bytes": 2875211776,
+      "detector_process_rss_bytes": 51277824,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't open that door before I return.",
+            "source_language": "zh-TW",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 4544,
+            "load_ms": 8,
+            "output_tokens": 17,
+            "generation_ms": 2090
+          }
+        ]
+      }
+    },
+    {
+      "name": "ko-en",
+      "source": "ko",
+      "target": "en",
+      "text": "약속을 잊지 마세요.",
+      "reference": "Don't forget the promise.",
+      "detected": "ko",
+      "detection": {
+        "language": "ko",
+        "confidence": 1.0,
+        "status": "detected",
+        "reason": "Korean Hangul script."
+      },
+      "detection_ms": 0.02,
+      "wall_ms": 3701,
+      "ollama_peak_rss_bytes": 2878078976,
+      "detector_process_rss_bytes": 51294208,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't forget your promise.",
+            "source_language": "ko",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3649,
+            "load_ms": 4,
+            "output_tokens": 14,
+            "generation_ms": 1581
+          }
+        ]
+      }
+    },
+    {
+      "name": "es-en",
+      "source": "es",
+      "target": "en",
+      "text": "No abras la puerta hasta que vuelva.",
+      "reference": "Don't open the door until I return.",
+      "detected": "es",
+      "detection": {
+        "language": "es",
+        "confidence": 0.785,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 65.98,
+      "wall_ms": 3794,
+      "ollama_peak_rss_bytes": 2790031360,
+      "detector_process_rss_bytes": 54304768,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't open the door until he returns.",
+            "source_language": "es",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3747,
+            "load_ms": 4,
+            "output_tokens": 17,
+            "generation_ms": 1729
+          }
+        ]
+      }
+    },
+    {
+      "name": "fr-en",
+      "source": "fr",
+      "target": "en",
+      "text": "Ne leur dis pas où nous sommes.",
+      "reference": "Don't tell them where we are.",
+      "detected": "fr",
+      "detection": {
+        "language": "fr",
+        "confidence": 0.8436,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 33.36,
+      "wall_ms": 3973,
+      "ollama_peak_rss_bytes": 2808360960,
+      "detector_process_rss_bytes": 55357440,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't tell them where we are.",
+            "source_language": "fr",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3923,
+            "load_ms": 4,
+            "output_tokens": 16,
+            "generation_ms": 1579
+          }
+        ]
+      }
+    },
+    {
+      "name": "de-en",
+      "source": "de",
+      "target": "en",
+      "text": "Öffne die Tür nicht, bevor ich zurückkomme.",
+      "reference": "Don't open the door until I return.",
+      "detected": "de",
+      "detection": {
+        "language": "de",
+        "confidence": 0.9926,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 32.3,
+      "wall_ms": 3786,
+      "ollama_peak_rss_bytes": 2853130240,
+      "detector_process_rss_bytes": 56487936,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't open the door until I return.",
+            "source_language": "de",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3737,
+            "load_ms": 4,
+            "output_tokens": 17,
+            "generation_ms": 1821
+          }
+        ]
+      }
+    },
+    {
+      "name": "pt-en",
+      "source": "pt",
+      "target": "en",
+      "text": "Não abra a porta até eu voltar.",
+      "reference": "Don't open the door until I return.",
+      "detected": "pt",
+      "detection": {
+        "language": "pt",
+        "confidence": 0.8275,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 21.18,
+      "wall_ms": 3709,
+      "ollama_peak_rss_bytes": 2852081664,
+      "detector_process_rss_bytes": 57012224,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't open the door until I return.",
+            "source_language": "pt",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3658,
+            "load_ms": 8,
+            "output_tokens": 17,
+            "generation_ms": 1660
+          }
+        ]
+      }
+    },
+    {
+      "name": "id-en-shared-malay",
+      "source": "id",
+      "target": "en",
+      "text": "Jangan buka pintu sampai aku kembali.",
+      "reference": "Don't open the door until I return.",
+      "detected": "und",
+      "detection": {
+        "language": "und",
+        "confidence": 0.6325,
+        "status": "uncertain",
+        "reason": "Language is uncertain; select the input language manually."
+      },
+      "detection_ms": 38.34,
+      "wall_ms": 3643,
+      "ollama_peak_rss_bytes": 2867560448,
+      "detector_process_rss_bytes": 58740736,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Don't open the door until I return.",
+            "source_language": "id",
+            "target_language": "en",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3601,
+            "load_ms": 24,
+            "output_tokens": 17,
+            "generation_ms": 1671
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-ja",
+      "source": "en",
+      "target": "ja",
+      "text": "Do not open the door until I return.",
+      "reference": "私が戻るまでドアを開けないで。",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 24.71,
+      "wall_ms": 3858,
+      "ollama_peak_rss_bytes": 2881474560,
+      "detector_process_rss_bytes": 59727872,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "私に戻るまでにドアを開けないで",
+            "source_language": "en",
+            "target_language": "ja",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3812,
+            "load_ms": 4,
+            "output_tokens": 20,
+            "generation_ms": 1941
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-zh",
+      "source": "en",
+      "target": "zh-CN",
+      "text": "Do not open the door until I return.",
+      "reference": "在我回来之前不要开门。",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.32,
+      "wall_ms": 3497,
+      "ollama_peak_rss_bytes": 2900045824,
+      "detector_process_rss_bytes": 59748352,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "等我回来再开门。",
+            "source_language": "en",
+            "target_language": "zh-CN",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3455,
+            "load_ms": 5,
+            "output_tokens": 15,
+            "generation_ms": 1512
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-zh-traditional",
+      "source": "en",
+      "target": "zh-TW",
+      "text": "Do not open the door until I return.",
+      "reference": "在我回來之前不要開門。",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.47,
+      "wall_ms": 3615,
+      "ollama_peak_rss_bytes": 2917953536,
+      "detector_process_rss_bytes": 59768832,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "不要等我回來再開門。",
+            "source_language": "en",
+            "target_language": "zh-TW",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3560,
+            "load_ms": 5,
+            "output_tokens": 17,
+            "generation_ms": 1675
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-ko",
+      "source": "en",
+      "target": "ko",
+      "text": "Do not open the door until I return.",
+      "reference": "내가 돌아올 때까지 문을 열지 마세요.",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.39,
+      "wall_ms": 3734,
+      "ollama_peak_rss_bytes": 2934243328,
+      "detector_process_rss_bytes": 59727872,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "나가기 전에 문을 열지 마라.",
+            "source_language": "en",
+            "target_language": "ko",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3689,
+            "load_ms": 4,
+            "output_tokens": 20,
+            "generation_ms": 1926
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-es",
+      "source": "en",
+      "target": "es",
+      "text": "Do not open the door until I return.",
+      "reference": "No abras la puerta hasta que vuelva.",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.5,
+      "wall_ms": 3896,
+      "ollama_peak_rss_bytes": 2950529024,
+      "detector_process_rss_bytes": 59727872,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "No abras la puerta hasta que regrese.",
+            "source_language": "en",
+            "target_language": "es",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3837,
+            "load_ms": 9,
+            "output_tokens": 18,
+            "generation_ms": 1746
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-fr",
+      "source": "en",
+      "target": "fr",
+      "text": "Do not open the door until I return.",
+      "reference": "N'ouvre pas la porte avant mon retour.",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.39,
+      "wall_ms": 4166,
+      "ollama_peak_rss_bytes": 2955436032,
+      "detector_process_rss_bytes": 59727872,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Ne pas ouvrir la porte jusqu'à ce que je revienne.",
+            "source_language": "en",
+            "target_language": "fr",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 4119,
+            "load_ms": 5,
+            "output_tokens": 22,
+            "generation_ms": 2370
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-de",
+      "source": "en",
+      "target": "de",
+      "text": "Do not open the door until I return.",
+      "reference": "Öffne die Tür nicht, bevor ich zurückkomme.",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.44,
+      "wall_ms": 4691,
+      "ollama_peak_rss_bytes": 2960097280,
+      "detector_process_rss_bytes": 59736064,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Öffne die Tür nicht, bis ich zurückkehre.",
+            "source_language": "en",
+            "target_language": "de",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 4635,
+            "load_ms": 5,
+            "output_tokens": 21,
+            "generation_ms": 2460
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-pt",
+      "source": "en",
+      "target": "pt",
+      "text": "Do not open the door until I return.",
+      "reference": "Não abra a porta até eu voltar.",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.43,
+      "wall_ms": 4334,
+      "ollama_peak_rss_bytes": 2978705408,
+      "detector_process_rss_bytes": 59744256,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Não abra a porta até que eu volte.",
+            "source_language": "en",
+            "target_language": "pt",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 4281,
+            "load_ms": 5,
+            "output_tokens": 18,
+            "generation_ms": 1998
+          }
+        ]
+      }
+    },
+    {
+      "name": "en-id",
+      "source": "en",
+      "target": "id",
+      "text": "Do not open the door until I return.",
+      "reference": "Jangan buka pintu sampai aku kembali.",
+      "detected": "en",
+      "detection": {
+        "language": "en",
+        "confidence": 0.7832,
+        "status": "detected",
+        "reason": "Local statistical language identification; confidence is not a guarantee."
+      },
+      "detection_ms": 0.57,
+      "wall_ms": 4287,
+      "ollama_peak_rss_bytes": 3021496320,
+      "detector_process_rss_bytes": 59756544,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Jangan buka pintu sampai saya kembali.",
+            "source_language": "en",
+            "target_language": "id",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 4230,
+            "load_ms": 8,
+            "output_tokens": 20,
+            "generation_ms": 2189
+          }
+        ]
+      }
+    },
+    {
+      "name": "ja-pt",
+      "source": "ja",
+      "target": "pt",
+      "text": "約束を忘れないで。",
+      "reference": "Não se esqueça da promessa.",
+      "detected": "ja",
+      "detection": {
+        "language": "ja",
+        "confidence": 1.0,
+        "status": "detected",
+        "reason": "Japanese kana script."
+      },
+      "detection_ms": 0.03,
+      "wall_ms": 3789,
+      "ollama_peak_rss_bytes": 3015176192,
+      "detector_process_rss_bytes": 59822080,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Não esqueça do compromisso.",
+            "source_language": "ja",
+            "target_language": "pt",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3739,
+            "load_ms": 5,
+            "output_tokens": 17,
+            "generation_ms": 1833
+          }
+        ]
+      }
+    },
+    {
+      "name": "ja-id",
+      "source": "ja",
+      "target": "id",
+      "text": "約束を忘れないで。",
+      "reference": "Jangan lupakan janji itu.",
+      "detected": "ja",
+      "detection": {
+        "language": "ja",
+        "confidence": 1.0,
+        "status": "detected",
+        "reason": "Japanese kana script."
+      },
+      "detection_ms": 0.04,
+      "wall_ms": 3968,
+      "ollama_peak_rss_bytes": 3028922368,
+      "detector_process_rss_bytes": 59822080,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Jangan lupa janji.",
+            "source_language": "ja",
+            "target_language": "id",
+            "detection_confidence": null,
+            "status": "translated"
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": [
+          {
+            "latency_ms": 3916,
+            "load_ms": 5,
+            "output_tokens": 15,
+            "generation_ms": 1903
+          }
+        ]
+      }
+    },
+    {
+      "name": "short-han",
+      "source": "auto",
+      "target": "en",
+      "text": "東京",
+      "reference": "東京",
+      "detected": "und",
+      "detection": {
+        "language": "und",
+        "confidence": 0.0,
+        "status": "uncertain",
+        "reason": "A short Han-only label can be Japanese or Chinese; select the input language manually."
+      },
+      "detection_ms": 0.05,
+      "wall_ms": 64,
+      "ollama_peak_rss_bytes": 2987565056,
+      "detector_process_rss_bytes": 59936768,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "東京",
+            "source_language": "und",
+            "target_language": "en",
+            "detection_confidence": 0.0,
+            "status": "uncertain",
+            "warning": "A short Han-only label can be Japanese or Chinese; select the input language manually."
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": []
+      }
+    },
+    {
+      "name": "short-latin",
+      "source": "auto",
+      "target": "en",
+      "text": "Continue",
+      "reference": "Continue",
+      "detected": "und",
+      "detection": {
+        "language": "und",
+        "confidence": 0.3133,
+        "status": "uncertain",
+        "reason": "Language is uncertain; select the input language manually."
+      },
+      "detection_ms": 8.67,
+      "wall_ms": 48,
+      "ollama_peak_rss_bytes": 2987585536,
+      "detector_process_rss_bytes": 60203008,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "Continue",
+            "source_language": "und",
+            "target_language": "en",
+            "detection_confidence": 0.3133,
+            "status": "uncertain",
+            "warning": "Language is uncertain; select the input language manually."
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": []
+      }
+    },
+    {
+      "name": "hud",
+      "source": "auto",
+      "target": "en",
+      "text": "HP 120",
+      "reference": "HP 120",
+      "detected": "und",
+      "detection": {
+        "language": "und",
+        "confidence": 0.0,
+        "status": "non_linguistic",
+        "reason": "Numbers, punctuation or a common HUD counter."
+      },
+      "detection_ms": 0.03,
+      "wall_ms": 46,
+      "ollama_peak_rss_bytes": 2987585536,
+      "detector_process_rss_bytes": 60203008,
+      "result": {
+        "segments": [
+          {
+            "id": "0",
+            "translation": "HP 120",
+            "source_language": "und",
+            "target_language": "en",
+            "detection_confidence": 0.0,
+            "status": "non_linguistic",
+            "warning": "Numbers, punctuation or a common HUD counter."
+          }
+        ],
+        "model": "qwen3:4b",
+        "model_identity": "qwen3:4b@359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7:multilingual-v1:lingua-2.2.0-dross-v1",
+        "context_used": true,
+        "timings": []
+      }
+    }
+  ]
+}

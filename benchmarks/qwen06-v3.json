@@ -1,0 +1,173 @@
+{
+  "model": "qwen3:0.6b",
+  "samples": [
+    {
+      "case": "normal",
+      "japanese": "この先は危険だ。一人で行くな。",
+      "reference": "It's dangerous ahead. Don't go alone.",
+      "output": [
+        {
+          "id": "0",
+          "translation": "This is dangerous. I'll go alone."
+        }
+      ],
+      "error": null,
+      "wall_ms": 2738,
+      "timings": [
+        {
+          "latency_ms": 2392,
+          "load_ms": 1837,
+          "output_tokens": 15,
+          "generation_ms": 268
+        }
+      ],
+      "peak_process_tree_rss_bytes": 865812480,
+      "available_ram_bytes": 1398079488,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    },
+    {
+      "case": "vertical",
+      "japanese": "約束を忘れないで。",
+      "reference": "Don't forget our promise.",
+      "output": [
+        {
+          "id": "0",
+          "translation": "Don't forget the promise."
+        }
+      ],
+      "error": null,
+      "wall_ms": 554,
+      "timings": [
+        {
+          "latency_ms": 337,
+          "load_ms": 5,
+          "output_tokens": 12,
+          "generation_ms": 218
+        }
+      ],
+      "peak_process_tree_rss_bytes": 865898496,
+      "available_ram_bytes": 1587744768,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    },
+    {
+      "case": "partial",
+      "japanese": "もし、あの時……",
+      "reference": "If, back then...",
+      "output": [
+        {
+          "id": "0",
+          "translation": "If that was then..."
+        }
+      ],
+      "error": null,
+      "wall_ms": 538,
+      "timings": [
+        {
+          "latency_ms": 310,
+          "load_ms": 5,
+          "output_tokens": 11,
+          "generation_ms": 184
+        }
+      ],
+      "peak_process_tree_rss_bytes": 865882112,
+      "available_ram_bytes": 1665130496,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    },
+    {
+      "case": "mixed_ui",
+      "japanese": "HP 120 / セーブしますか？",
+      "reference": "HP 120 / Save the game?",
+      "output": [
+        {
+          "id": "0",
+          "translation": "HP 120 / セーブしますか？"
+        }
+      ],
+      "error": null,
+      "wall_ms": 841,
+      "timings": [
+        {
+          "latency_ms": 546,
+          "load_ms": 5,
+          "output_tokens": 19,
+          "generation_ms": 409
+        }
+      ],
+      "peak_process_tree_rss_bytes": 866185216,
+      "available_ram_bytes": 1600864256,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    },
+    {
+      "case": "stylized",
+      "japanese": "おいっ！待てってば！！",
+      "reference": "Hey! I said wait!",
+      "output": [
+        {
+          "id": "0",
+          "translation": "Please wait!"
+        }
+      ],
+      "error": null,
+      "wall_ms": 571,
+      "timings": [
+        {
+          "latency_ms": 288,
+          "load_ms": 4,
+          "output_tokens": 9,
+          "generation_ms": 168
+        }
+      ],
+      "peak_process_tree_rss_bytes": 866193408,
+      "available_ram_bytes": 1606811648,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    },
+    {
+      "case": "repeated",
+      "japanese": "約束を忘れないで。",
+      "reference": "Don't forget our promise.",
+      "output": [
+        {
+          "id": "0",
+          "translation": "Don't forget the promise."
+        }
+      ],
+      "error": null,
+      "wall_ms": 569,
+      "timings": [
+        {
+          "latency_ms": 366,
+          "load_ms": 5,
+          "output_tokens": 12,
+          "generation_ms": 239
+        }
+      ],
+      "peak_process_tree_rss_bytes": 865845248,
+      "available_ram_bytes": 1643978752,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    },
+    {
+      "case": "poor_ocr",
+      "japanese": "王城へ…行□な？",
+      "reference": "Uncertain OCR: must not invent the missing character.",
+      "output": [
+        {
+          "id": "0",
+          "translation": "[Unclear OCR] 王城へ…行□な？"
+        }
+      ],
+      "error": null,
+      "wall_ms": 264,
+      "timings": [],
+      "peak_process_tree_rss_bytes": 865861632,
+      "available_ram_bytes": 1629425664,
+      "model_identity": "qwen3:0.6b@7df6b6e09427a769808717c0a93cadc4ae99ed4eb8bf5ca557c90846becea435:ja-en-v3",
+      "gpu_offload_bytes": 0
+    }
+  ]
+}

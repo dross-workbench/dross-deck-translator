@@ -1,0 +1,158 @@
+{
+  "platform": "Windows Workbench CPU; one ONNX thread",
+  "font": "YuGothM.ttc",
+  "versions": {
+    "rapidocr": "3.8.3",
+    "onnxruntime": "1.26.0",
+    "Pillow": "13.0.0"
+  },
+  "model_sha256": {
+    "ch_PP-OCRv5_mobile_det.onnx": "ca3014670099126189c9519ef770470c03bf41695fb138c6bc19737bd4ba2875",
+    "ch_rec.onnx": "64ea1b54ea0506609378a3638ff5b2547af7e24809b890e501fb0cce54de21f7",
+    "ch_dict.txt": "d1979e9f794c464c0d2e0b70a7fe14dd978e9dc644c0e71f14158cdf8342af1b",
+    "ch_ppocr_mobile_v2.0_cls_infer.onnx": "70581b300b83babd9e0dd1d7d74c5b006869e8796da277a70c2e405bf9d77c82"
+  },
+  "initialization_ms": 1262,
+  "results": [
+    {
+      "case": "normal",
+      "expected": "この先は危険だ。一人で行くな。",
+      "detected": "この先は危険だ。一人で行くな。",
+      "normalized_exact": true,
+      "latency_ms": 1385,
+      "regions": [
+        {
+          "text": "この先は危険だ。一人で行くな。",
+          "rect": {
+            "left": 85,
+            "top": 542,
+            "right": 498,
+            "bottom": 588
+          },
+          "confidence": 0.99996,
+          "is_dialog": false
+        }
+      ]
+    },
+    {
+      "case": "vertical",
+      "expected": "約束を忘れないで。",
+      "detected": "約束を忘れないで",
+      "normalized_exact": false,
+      "latency_ms": 959,
+      "regions": [
+        {
+          "text": "約束を忘れないで",
+          "rect": {
+            "left": 1080,
+            "top": 101,
+            "right": 1123,
+            "bottom": 354
+          },
+          "confidence": 0.99685,
+          "is_dialog": false
+        }
+      ]
+    },
+    {
+      "case": "partial",
+      "expected": "もし、あの時……",
+      "detected": "もし、あの時…",
+      "normalized_exact": false,
+      "latency_ms": 698,
+      "regions": [
+        {
+          "text": "もし、あの時…",
+          "rect": {
+            "left": 83,
+            "top": 545,
+            "right": 297,
+            "bottom": 586
+          },
+          "confidence": 0.99894,
+          "is_dialog": false
+        }
+      ]
+    },
+    {
+      "case": "mixed_ui",
+      "expected": "HP 120 / セーブしますか？",
+      "detected": "HP120ノセーブしますか？",
+      "normalized_exact": false,
+      "latency_ms": 740,
+      "regions": [
+        {
+          "text": "HP120ノセーブしますか？",
+          "rect": {
+            "left": 43,
+            "top": 56,
+            "right": 394,
+            "bottom": 95
+          },
+          "confidence": 0.96988,
+          "is_dialog": false
+        }
+      ]
+    },
+    {
+      "case": "stylized",
+      "expected": "おいっ！待てってば！！",
+      "detected": "おいっ！待てってば！！",
+      "normalized_exact": true,
+      "latency_ms": 651,
+      "regions": [
+        {
+          "text": "おいっ！待てってば！！",
+          "rect": {
+            "left": 84,
+            "top": 546,
+            "right": 393,
+            "bottom": 586
+          },
+          "confidence": 0.99712,
+          "is_dialog": false
+        }
+      ]
+    },
+    {
+      "case": "repeated",
+      "expected": "約束を忘れないで。",
+      "detected": "約束を忘れないで。",
+      "normalized_exact": true,
+      "latency_ms": 597,
+      "regions": [
+        {
+          "text": "約束を忘れないで。",
+          "rect": {
+            "left": 81,
+            "top": 544,
+            "right": 330,
+            "bottom": 587
+          },
+          "confidence": 0.99941,
+          "is_dialog": false
+        }
+      ]
+    },
+    {
+      "case": "poor_ocr",
+      "expected": "王城へ…行□な？",
+      "detected": "王城へ…行□な？",
+      "normalized_exact": true,
+      "latency_ms": 607,
+      "regions": [
+        {
+          "text": "王城へ…行□な？",
+          "rect": {
+            "left": 83,
+            "top": 543,
+            "right": 314,
+            "bottom": 586
+          },
+          "confidence": 0.92714,
+          "is_dialog": false
+        }
+      ]
+    }
+  ]
+}

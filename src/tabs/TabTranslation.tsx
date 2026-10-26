@@ -19,6 +19,7 @@ import {
 import { VFC, useState, useEffect, useRef, useCallback, RefObject } from "react";
 import { call } from "@decky/api";
 import { useSettings } from "../SettingsContext";
+import { DrossCapabilities, drossLanguageChoices } from '../DrossLanguages';
 import { HiKey, HiLockClosed, HiInboxArrowDown, HiTrash, HiXMark, HiXCircle, HiExclamationTriangle, HiInformationCircle } from "react-icons/hi2";
 import { BsArrowRepeat, BsStars } from "react-icons/bs";
 
@@ -53,6 +54,7 @@ const languageOptions = [
     { label: "\ud83c\uddec\ud83c\uddf7 Greek", data: "el" },
     { label: "\ud83c\uddee\ud83c\uddf3 Hindi", data: "hi" },
     { label: "\ud83c\udded\ud83c\uddfa Hungarian", data: "hu" },
+    { label: "\ud83c\uddee\ud83c\udde9 Indonesian", data: "id" },
     { label: "\ud83c\uddee\ud83c\uddf9 Italian", data: "it" },
     { label: "\ud83c\uddef\ud83c\uddf5 Japanese", data: "ja" },
     { label: "\ud83c\uddf0\ud83c\uddf7 Korean", data: "ko" },
@@ -75,7 +77,7 @@ const outputLanguageOptions = languageOptions.filter(lang => lang.data !== "auto
 // Languages RapidOCR able to work with
 const rapidocrLanguages = new Set([
     'en', 'zh-CN', 'zh-TW', 'ja', 'ko',
-    'de', 'fr', 'es', 'it', 'pt', 'nl', 'no', 'pl', 'tr', 'ro', 'vi', 'fi', 'hr',
+    'de', 'fr', 'es', 'it', 'pt', 'id', 'nl', 'no', 'pl', 'tr', 'ro', 'vi', 'fi', 'hr',
     'cs', 'hu', 'sv', 'da',
     'ru', 'uk', 'el', 'th', 'bg'
 ]);
@@ -338,7 +340,7 @@ const CacheEntriesModal: VFC<{ closeModal?: () => void; onCleared?: () => void }
     );
 };
 
-const knownGeminiModels: DropdownItem[] = [
+const knownGeminiModels: { label: React.ReactNode; data: string }[] = [
     { label: <span>2.5 Flash</span>, data: "gemini-2.5-flash" },
     { label: <span>2.5 Flash Lite</span>, data: "gemini-2.5-flash-lite" },
     { label: <span>3 Flash (Preview)</span>, data: "gemini-3-flash-preview" },
@@ -352,7 +354,7 @@ const GeminiModelSelector: VFC<{
     hasApiKey: boolean;
     onChange: (model: string) => void;
 }> = ({ selectedModel, hasApiKey, onChange }) => {
-    const [models, setModels] = useState<DropdownItem[]>(knownGeminiModels);
+    const [models, setModels] = useState<{ label: React.ReactNode; data: string }[]>(knownGeminiModels);
     const [loading, setLoading] = useState(false);
     const [validated, setValidated] = useState(false);
 
@@ -645,6 +647,16 @@ export const TabTranslation: VFC<TabTranslationProps> = ({ scrollTarget, onScrol
     const nllb = useNllbModelStatus();
     const rapidocr = useRapidOCRStatus();
     const [cacheEntries, setCacheEntries] = useState<number | null>(null);
+    const [drossCapabilities, setDrossCapabilities] = useState<DrossCapabilities | null>(null);
+    const isDross = settings.translationProvider === 'dross';
+    useEffect(() => {
+        let mounted = true;
+        if (isDross) call<[], DrossCapabilities>('test_dross_connection').then(result => {
+            if (mounted) setDrossCapabilities(result);
+        }).catch(() => { if (mounted) setDrossCapabilities(null); });
+        return () => { mounted = false; };
+    }, [isDross]);
+    const drossChoices = drossLanguageChoices(drossCapabilities);
 
     const refreshCacheStats = useCallback(async () => {
         try {
@@ -682,7 +694,8 @@ export const TabTranslation: VFC<TabTranslationProps> = ({ scrollTarget, onScrol
     const isCT2 = settings.translationProvider === 'ct2';
     const filteredLanguageOptions = isCT2
         ? languageOptions.filter(lang => lang.data !== "auto")
-        : languageOptions;
+        : isDross ? languageOptions.filter(lang => drossChoices.source.includes(lang.data)) : languageOptions;
+    const filteredOutputOptions = isDross ? outputLanguageOptions.filter(lang => drossChoices.target.includes(lang.data)) : outputLanguageOptions;
 
     const placeholderOption = settings.inputLanguage === '' ? [selectLanguageOption] : [];
     const inputLanguageOptions = settings.ocrProvider === 'rapidocr'
@@ -713,6 +726,8 @@ export const TabTranslation: VFC<TabTranslationProps> = ({ scrollTarget, onScrol
                         label="Input Language"
                         description={isCT2
                             ? "Source language (auto-detect not available for offline translation)"
+                            : isDross && settings.ocrProvider !== 'rapidocr'
+                                ? 'Auto-detect identifies each recognized region locally on Workbench. Short or ambiguous text may need a manual choice.'
                             : settings.ocrProvider === 'rapidocr'
                                 ? "Source language for text recognition"
                                 : "Source language (Select auto-detect if unsure)"}
@@ -727,11 +742,15 @@ export const TabTranslation: VFC<TabTranslationProps> = ({ scrollTarget, onScrol
                         layout="below"
                         label="Output Language"
                         description="Target language for translation"
-                        rgOptions={[...(settings.targetLanguage === '' ? [selectLanguageOption] : []), ...outputLanguageOptions]}
+                        rgOptions={[...(settings.targetLanguage === '' ? [selectLanguageOption] : []), ...filteredOutputOptions]}
                         selectedOption={settings.targetLanguage}
                         onChange={(option: any) => updateSetting('targetLanguage', option.data, 'Output language')}
                     />
                 </PanelSectionRow>
+                {isDross && <PanelSectionRow><Field label={drossCapabilities?.translation_model ? `Local model: ${drossCapabilities.translation_model}` : 'Dross local languages'} description={settings.ocrProvider === 'rapidocr'
+                    ? 'RapidOCR needs a selected source language to load the right recognition model. Use Chrome Screen AI for automatic language detection.'
+                    : 'English, Japanese, Chinese, Korean, Spanish, French, German, Portuguese and Indonesian. Recognition quality varies by script and game font. Study remains Japanese-only.'} /></PanelSectionRow>}
+                {isDross && (!drossChoices.source.includes(settings.inputLanguage) || !drossChoices.target.includes(settings.targetLanguage)) && <PanelSectionRow><Field label="Choose a supported language pair" description="The selected pair is unavailable on this Workbench server. Choose from these menus, or update the server and reopen this tab." /></PanelSectionRow>}
             </PanelSection>
 
             <PanelSection title="Recognition">
@@ -1061,6 +1080,7 @@ export const TabTranslation: VFC<TabTranslationProps> = ({ scrollTarget, onScrol
                             <div style={{ flex: 1 }}>
                                 <Dropdown
                                     rgOptions={[
+                                        { label: <span>Dross Local AI</span>, data: "dross" },
                                         { label: <span>On-Device</span>, data: "ct2" },
                                         { label: <span>Google Translate</span>, data: "freegoogle" },
                                         { label: <span>Google Cloud</span>, data: "googlecloud" }

@@ -25,7 +25,7 @@ export interface Settings {
     quickToggleEnabled: boolean; // Quick toggle overlay with right button in combo modes
     useFreeProviders: boolean; // Use free providers (OCR.space + free Google Translate) - deprecated, use ocrProvider
     ocrProvider: 'rapidocr' | 'ocrspace' | 'googlecloud' | 'gemini_vision' | 'chromescreenai'; // OCR provider
-    translationProvider: 'freegoogle' | 'googlecloud' | 'ct2'; // Translation provider
+    translationProvider: 'dross' | 'freegoogle' | 'googlecloud' | 'ct2'; // Translation provider
     googleApiKey: string; // Google Cloud Vision API key for text recognition
     geminiApiKey: string; // Gemini API key for Gemini Vision (free tier available)
     geminiModel: string; // Gemini model to use
@@ -67,7 +67,7 @@ const initialSettings: Settings = {
     quickToggleEnabled: false, // Default to disabled
     useFreeProviders: true, // Default to free providers (no API key needed) - deprecated
     ocrProvider: "chromescreenai", // Default to chromescreenai (Chrome Screen AI) provider
-    translationProvider: "freegoogle", // Default to free Google Translate
+    translationProvider: "dross", // Default to free Google Translate
     googleApiKey: "", // Empty by default, only needed for Google Cloud
     geminiApiKey: "", // Empty by default, needed for Gemini Vision
     geminiModel: "gemini-2.5-flash", // Default Gemini model
@@ -144,7 +144,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
                     quickToggleEnabled: serverSettings.quick_toggle_enabled || false, // Add default if not present
                     useFreeProviders: serverSettings.use_free_providers !== false, // Default to true (deprecated)
                     ocrProvider: serverSettings.ocr_provider || "chromescreenai", // OCR provider setting
-                    translationProvider: serverSettings.translation_provider || "freegoogle", // Translation provider setting
+                    translationProvider: serverSettings.translation_provider || "dross", // Translation provider setting
                     googleApiKey: serverSettings.google_api_key || "", // Google API key
                     geminiApiKey: serverSettings.gemini_api_key || "", // Gemini API key
                     geminiModel: serverSettings.gemini_model || "gemini-2.5-flash",
@@ -177,7 +177,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
 
                 // Set provider settings for upfront API key validation
                 logic.setOcrProvider(serverSettings.ocr_provider || "chromescreenai");
-                logic.setTranslationProvider(serverSettings.translation_provider || "freegoogle");
+                logic.setTranslationProvider(serverSettings.translation_provider || "dross");
+                logic.setDrossMode(serverSettings.dross_mode || 'translate');
                 logic.setHasGoogleApiKey(!!serverSettings.google_api_key);
                 logic.setHasGeminiApiKey(!!serverSettings.gemini_api_key);
 
@@ -190,7 +191,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
                 logic.setAllowLabelGrowth(serverSettings.allow_label_growth ?? false);
 
                 logger.info('SettingsContext', 'All settings loaded successfully');
-                logger.logObject('SettingsContext', 'Settings', mappedSettings);
+                // Never log settings: they can contain credentials.
             } else {
                 logger.error('SettingsContext', 'Failed to load settings');
             }
