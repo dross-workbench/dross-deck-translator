@@ -38,7 +38,8 @@ def test_translation_contract_and_no_images(service):
     body = {'segments': [{'id': 'a', 'text': '約束を忘れないで。'}]}
     r = client.post('/v1/translate', json=body)
     assert r.status_code == 200
-    assert r.json()['segments'] == [{'id': 'a', 'translation': "Don't forget our promise."}]
+    assert r.json()['segments'][0] == {'id': 'a', 'translation': "Don't forget our promise.",
+        'source_language': 'ja', 'target_language': 'en', 'detection_confidence': None, 'status': 'translated'}
     assert client.post('/v1/translate', json={**body, 'image': 'forbidden'}).status_code == 422
     assert all('images' not in json.loads(c.content) for c in calls if c.method == 'POST')
 

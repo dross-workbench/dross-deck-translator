@@ -22,7 +22,7 @@ export const DrossSettings: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) =>
             if (token) { await save('dross_token', token.trim()); setToken(''); }
             const result = await call<[], any>('test_dross_connection');
             setStatus(result.status === 'ok'
-                ? `Connected · Translation: ${result.translation_model} · Analysis: ${result.analysis_model}${result.analysis_available ? '' : ' (not installed)'}${result.context_supported ? '' : ' · This model does not use dialogue history'}`
+                ? `Connected · Translation: ${result.translation_model} · Analysis: ${result.analysis_model}${result.analysis_available ? '' : ' (not installed)'}${result.automatic_detection ? ' · Local language detection ready' : ' · Update Workbench for multilingual support'}${result.context_supported ? '' : ' · This model does not use dialogue history'}`
                 : result.message || 'Model is not ready. Check Workbench.');
         } catch { setStatus('Connection failed. Check Workbench settings.'); }
     };
@@ -35,16 +35,16 @@ export const DrossSettings: VFC<{ logic: GameTranslatorLogic }> = ({ logic }) =>
                 <PanelSectionRow><ButtonItem onClick={async () => { await logic.startImmersion(); setStatus(logic.isImmersionActive() ? 'Immersion started. Close this menu. Use the dismiss shortcut to stop.' : 'Immersion did not start. Check the notification.'); }}>Start immersion</ButtonItem></PanelSectionRow>
                 <PanelSectionRow><ButtonItem onClick={() => { logic.stopImmersion(); setStatus('Immersion stopped'); }}>Stop immersion</ButtonItem></PanelSectionRow>
             </>}
-            <PanelSectionRow><ButtonItem onClick={async () => { if (!await logic.studyLastScreen()) setStatus('Translate a screen first, then open Study.'); }}>Study last screen</ButtonItem></PanelSectionRow>
+            <PanelSectionRow><ButtonItem onClick={async () => { if (!await logic.studyLastScreen()) setStatus('Study needs a recognized Japanese sentence on the last screen.'); }}>Study last screen (Japanese)</ButtonItem></PanelSectionRow>
             <PanelSectionRow><TextField label="Workbench gateway" value={settings.dross_server_url || ''} onChange={e => setSettings(s => ({ ...s, dross_server_url: e.target.value }))} /></PanelSectionRow>
             <PanelSectionRow><TextField label="Pairing token" bIsPassword value={token} onChange={e => setToken(e.target.value)} /></PanelSectionRow>
             <PanelSectionRow><TextField label="Certificate SHA-256" value={settings.dross_certificate_sha256 || ''} onChange={e => setSettings(s => ({ ...s, dross_certificate_sha256: e.target.value }))} /></PanelSectionRow>
             <PanelSectionRow><ButtonItem onClick={connect}>Save & Test Connection</ButtonItem></PanelSectionRow>
             <PanelSectionRow><Field label="Connection" description={status} /></PanelSectionRow>
-            <PanelSectionRow><Field label="Display"><Dropdown selectedOption={settings.dross_display_mode || 'english'} rgOptions={[{ label: 'English', data: 'english' }, { label: 'Japanese', data: 'japanese' }, { label: 'Bilingual', data: 'bilingual' }]} onChange={o => { save('dross_display_mode', o.data).catch(() => setStatus('Save failed')); }} /></Field></PanelSectionRow>
+            <PanelSectionRow><Field label="Display"><Dropdown selectedOption={settings.dross_display_mode || 'english'} rgOptions={[{ label: 'Translated text', data: 'english' }, { label: 'Original text', data: 'japanese' }, { label: 'Bilingual', data: 'bilingual' }]} onChange={o => { save('dross_display_mode', o.data).catch(() => setStatus('Save failed')); }} /></Field></PanelSectionRow>
             <PanelSectionRow><SliderField label="Timeout (seconds)" value={settings.dross_timeout ?? 120} min={10} max={300} step={10} showValue onChange={v => { save('dross_timeout', v).catch(() => setStatus('Save failed')); }} /></PanelSectionRow>
             <PanelSectionRow><SliderField label="Previous dialogue lines" value={settings.dross_context_lines ?? 3} min={0} max={6} step={1} showValue onChange={v => { save('dross_context_lines', v).catch(() => setStatus('Save failed')); }} /></PanelSectionRow>
-            {toggle('dross_offline_fallback', 'On-device fallback', 'Use NLLB only if Workbench is unavailable. Download NLLB in Translation first.')}
+            {toggle('dross_offline_fallback', 'On-device fallback', 'Use NLLB if Workbench is unavailable. Requires an explicit input language and the NLLB download.')}
             {toggle('dross_local_only', 'Local providers only', 'Block cloud OCR and translation. Keep enabled for zero commercial AI usage.')}
             {toggle('dross_save_text', 'Save translation cache', 'Off keeps Dross translations in memory. Turning off deletes the disk cache.')}
             {toggle('dross_allow_screenshots', 'Allow saved screenshots', 'Explicit vocabulary saves only. Normal translation always sends text.')}

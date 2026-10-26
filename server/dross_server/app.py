@@ -5,7 +5,8 @@ from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from .config import Config
 from .inference import Ollama, ServiceError
-from .schemas import TranslateRequest, AnalysisRequest, VocabularyRequest, EncounterRequest
+from .schemas import TranslateRequest, DetectRequest, AnalysisRequest, VocabularyRequest, EncounterRequest
+from .languages import LANGUAGES, UI_LANGUAGES, DETECTOR_ID
 from .study import JapaneseStudy
 from .vocabulary import VocabularyStore
 from .anki import Anki
@@ -29,7 +30,7 @@ def create_app(config=None, inference=None):
         if not secrets.compare_digest(supplied.encode(), ("Bearer " + config.token).encode()):
             raise ServiceError("unauthorized", "Pair the Deck using the Workbench access token.", 401)
 
-    app = FastAPI(title="dross-translation-server", version="0.1.0", lifespan=lifespan,
+    app = FastAPI(title="dross-translation-server", version="0.2.0", lifespan=lifespan,
                   docs_url=None, redoc_url=None, openapi_url=None, dependencies=[Depends(authenticate)])
     app.state.config, app.state.inference = config, inference
 
@@ -59,10 +60,13 @@ def create_app(config=None, inference=None):
             translation = config.translation_model in models
             analysis = config.analysis_model in models
             identity = await inference.identity(config.translation_model) if translation else None
-            return {"status": "ok" if translation else "degraded", "version": "0.1.0",
+            return {"status": "ok" if translation else "degraded", "version": "0.2.0",
                     "translation_model": config.translation_model, "analysis_model": config.analysis_model,
                     "translation_available": translation, "analysis_available": analysis,
                     "model_identity": identity, "local_only": True,
+                    'source_languages': ['auto', *LANGUAGES], 'target_languages': UI_LANGUAGES,
+                    'language_names': LANGUAGES, 'automatic_detection': True, 'detector_identity': DETECTOR_ID,
+                    'study_languages': ['ja'],
                     "context_supported": not config.translation_model.startswith("translategemma"),
                     "screenshots_allowed": config.allow_images}
         except ServiceError as e:
@@ -75,6 +79,10 @@ def create_app(config=None, inference=None):
             return await asyncio.wait_for(inference.translate(body), timeout=config.timeout)
         except TimeoutError:
             raise ServiceError('inference_timeout', 'The complete translation request exceeded its time limit.', 504)
+
+    @app.post('/v1/detect')
+    async def detect(body: DetectRequest):
+        return await inference.detect(body)
 
     @app.post('/v1/analyze')
     async def analyze(body: AnalysisRequest):

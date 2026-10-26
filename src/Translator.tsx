@@ -8,6 +8,7 @@ import { Input, InputMode, ActionType, ProgressInfo } from "./Input";
 import { ImageState } from "./Overlay";
 import { openStudy } from './StudyOverlay';
 import { ImmersionLoop } from './ImmersionLoop';
+import { languageName } from './DrossLanguages';
 import { logger } from "./Logger";
 
 // Screenshot response interface
@@ -429,10 +430,7 @@ export class GameTranslatorLogic {
             if (textRegions.length > 0) {
                 const signature = JSON.stringify(textRegions.map(r => r.text));
                 if (automatic && signature === this.lastImmersionText) {
-                    const reused = textRegions.map((r, i) => ({ ...r,
-                        translatedText: this.lastImmersionRegions[i].translatedText,
-                        englishTranslation: this.lastImmersionRegions[i].englishTranslation,
-                        drossFallback: this.lastImmersionRegions[i].drossFallback, drossLive: true }));
+                    const reused = textRegions.map((r, i) => ({ ...this.lastImmersionRegions[i], ...r, drossLive: true }));
                     this.lastImmersionFrame = result.fingerprint || '';
                     this.imageState.showTranslatedImage(result.base64, reused);
                     return;
@@ -449,12 +447,20 @@ export class GameTranslatorLogic {
                     return;
                 }
                 if (translatedRegions.some(r => r.drossFallback)) this.notify('Using on-device NLLB fallback', 3000);
+                if (this.translationProvider === 'dross' && !automatic) {
+                    const uncertain = translatedRegions.filter(r => r.drossWarning).length;
+                    if (uncertain) this.notify('Some text needs a language choice', 4500, `${uncertain} region(s) left unchanged. Select Input Language manually in Translation settings.`);
+                    else if (this.textTranslator.getInputLanguage() === 'auto') {
+                        const languages = [...new Set(translatedRegions.map(r => r.drossSourceLanguage).filter((l): l is string => !!l && l !== 'und'))];
+                        if (languages.length) this.notify(`Detected: ${languages.map(languageName).join(', ')}`, 2200);
+                    }
+                }
                 logger.info('Translator', `Translation complete: ${translatedRegions.length} regions`);
 
                 if (this.hideIdenticalTranslations && !automatic) {
                     const before = translatedRegions.length;
                     translatedRegions = translatedRegions.filter(r =>
-                        r.translatedText.trim().toLowerCase() !== r.text.trim().toLowerCase()
+                        r.drossWarning || r.translatedText.trim().toLowerCase() !== r.text.trim().toLowerCase()
                     );
                     if (translatedRegions.length < before) {
                         logger.info('Translator', `Filtered ${before - translatedRegions.length} identical translations`);
@@ -472,7 +478,8 @@ export class GameTranslatorLogic {
                 if (this.translationProvider === 'dross') {
                     const options = await call<[], any>('get_dross_settings');
                     this.studyImage = options.dross_allow_screenshots ? result.base64 : '';
-                    if (!automatic && !isCancelled() && options.dross_mode === 'study') await this.studyLastScreen();
+                    if (!automatic && !isCancelled() && options.dross_mode === 'study' && !await this.studyLastScreen())
+                        this.notify('Study currently supports Japanese sentences only', 3500);
                 }
             } else {
                 if (automatic) {
@@ -539,6 +546,7 @@ export class GameTranslatorLogic {
     }
 
     setInputLanguage = (language: string): void => {
+        if (language !== this.getInputLanguage() && (this.immersion.active || this.isProcessing)) this.stopImmersion();
         this.textTranslator.setInputLanguage(language);
     }
 
@@ -547,6 +555,7 @@ export class GameTranslatorLogic {
     }
 
     setTargetLanguage = (language: string): void => {
+        if (language !== this.getTargetLanguage() && (this.immersion.active || this.isProcessing)) this.stopImmersion();
         this.textTranslator.setTargetLanguage(language);
     }
 

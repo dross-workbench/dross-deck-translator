@@ -13,6 +13,11 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
 export interface TranslatedRegion extends TextRegion {
     translatedText: string;
     englishTranslation?: string;
+    drossTranslation?: string;
+    drossSourceLanguage?: string;
+    drossTargetLanguage?: string;
+    drossDetectionConfidence?: number | null;
+    drossWarning?: string;
     drossFallback?: boolean;
     drossLive?: boolean;
 }

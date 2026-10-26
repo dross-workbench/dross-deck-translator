@@ -35,7 +35,7 @@ class ChromeScreenAIProvider(OCRProvider):
     # rest of the plugin supports plus 'auto'.
     SUPPORTED_LANGUAGES = [
         'auto', 'ar', 'bg', 'zh-CN', 'zh-TW', 'hr', 'cs', 'da', 'nl', 'no', 'en',
-        'fi', 'fr', 'de', 'el', 'hi', 'hu', 'it', 'ja', 'ko', 'pl', 'pt',
+        'fi', 'fr', 'de', 'el', 'hi', 'hu', 'id', 'it', 'ja', 'ko', 'pl', 'pt',
         'ro', 'ru', 'es', 'sv', 'th', 'tr', 'uk', 'vi',
     ]
 

@@ -4,8 +4,8 @@ This is a functional development build, not a verified Steam Deck release.
 
 ## Automated checks
 
-- Python: 29 passing tests covering authentication, local-model allowlist, errors, response mapping, context/model/game cache isolation, fallback policy, dictionary readings/forms, TSV escaping, idempotent saves, encounters, screenshot consent/selective deletion, and mocked AnkiConnect including refusal of an unrelated service.
-- Frontend: four passing tests covering single-flight immersion requests, cancellation, restart generations, polling limits, and upstream OCR grouping/filtering with Japanese fixtures.
+- Python: 71 passing tests covering authentication, local-model allowlist, errors, multilingual detection and prompt construction, mixed-region grouping, language/model/context/game cache isolation, fallback policy, dictionary readings/forms, TSV escaping, idempotent saves, encounters, screenshot consent/selective deletion, and mocked AnkiConnect including refusal of an unrelated service.
+- Frontend: six passing tests covering language capabilities/legacy gateways, Portuguese/Indonesian choices, cancellation when languages change, single-flight immersion requests, restart generations, polling limits, and upstream OCR grouping/filtering with Japanese fixtures.
 - Strict TypeScript and production builds pass. Four upstream TypeScript errors were fixed without replacing its OCR, capture or input implementations.
 - Synthetic 1280×800 game scenes cover normal dialogue, vertical text, partial dialogue, mixed UI, stylized dialogue, repeated text and damaged OCR. Generated screenshots stay in ignored test output. These checks validate transport and fixture geometry, **not OCR engine accuracy**.
 - The ZIP includes the frontend, backend/providers, GPLv3 license, notices and checksum-verified upstream Linux dependencies. It excludes Windows binaries, credentials, models, databases and screenshots.
@@ -20,6 +20,33 @@ pnpm run build
 
 ## Workbench measurements
 
+### Multilingual update, 2026-10-26
+
+The same CPU-only Workbench ran 20 translation cases per model, plus three ambiguous/HUD cases that bypass inference. Authored fixtures cover all nine languages, both Chinese script choices, English output and non-English output, including Japanese → Portuguese/Indonesian. Results and candidate references are retained in [multilingual-qwen3-4b.json](benchmarks/multilingual-qwen3-4b.json) and [multilingual-translategemma-4b.json](benchmarks/multilingual-translategemma-4b.json). References allow valid paraphrases; this is a smoke evaluation without native-speaker scoring, not a language accuracy percentage. No personal dialogue or screenshots were used.
+
+| Model | First request | Warm range | Warm median | Peak Ollama working set |
+|---|---:|---:|---:|---:|
+| Qwen3 4B | 14.70 s | 3.50–4.69 s | 3.86 s | 2.82 GiB |
+| TranslateGemma 4B | 12.15 s | 2.26–3.67 s | 2.83 s | 3.24 GiB |
+
+Qwen changed “until I return” to “before leaving” in Korean output, produced an incorrect Japanese particle, and reversed the instruction in Traditional Chinese output. TranslateGemma avoided those particular errors and was selected as the new translation default. It often added “please” and sometimes supplied an unstated possessor or plural; tone and omitted subjects still need caution. The Spanish source's omitted subject is ambiguous without context. TranslateGemma does not consume prior dialogue; Qwen remains available for history-aware translation. Analysis uses Qwen, and the service unloads the previous model before switching to avoid holding both large models in RAM.
+
+Local detection took 0–85.36 ms per region in these runs, median below 1 ms with repeated text. The entire benchmark Python process (HTTP client plus loaded detector) peaked at about 58 MiB working set; this is not the full gateway/dictionary footprint. Script rules and Lingua confidence correctly identified the clear fixtures, while short Han-only labels, “Continue” and an Indonesian sentence shared with Malay were left uncertain. A separate regression covers distinguishable Indonesian. Short/unsupported/mixed-script inputs and uncertain source text do not trigger guessed translations. This conservative behavior can require manual selection, especially for Indonesian.
+
+The [live authenticated HTTPS check](benchmarks/multilingual-https.json) used the real Deck-side provider on Windows. Auto Japanese → English took 12.63 s cold; Portuguese → English, manually selected Indonesian → English, and Japanese → Portuguese/Indonesian took 2.42–2.83 s warm. Repeats took 82–105 ms. Rectangle fields were preserved in all six cases, and uncertain Indonesian stayed original with a manual-selection warning. The gateway remained loopback-only; SteamOS rendering and Wi-Fi latency were not measured.
+
+Reproduce after starting local Ollama, then the configured HTTPS gateway:
+
+```powershell
+.venv/Scripts/python.exe -X utf8 server/benchmark_languages.py --model qwen3:4b --output .local/languages-qwen.json
+.venv/Scripts/python.exe -X utf8 server/benchmark_languages.py --model translategemma:4b --output .local/languages-gemma.json
+.venv/Scripts/python.exe -X utf8 server/smoke_languages.py
+```
+
+The benchmark unloads the current local Ollama model before each run; run it when no translation is in progress. Runs are sequential, with one model loaded. Test timings are informational and are not enforced as fixed latency thresholds.
+
+### Initial Japanese evaluation, 2026-10-25
+
 Measured 2026-10-25 with Ollama 0.40.11 on an i5-1135G7 (4 cores/8 threads), 11.8 GiB usable RAM and Intel Iris Xe. Ollama reported CPU inference and zero GPU offload. Initial free RAM was about 0.8 GiB; Windows reclaimed memory during testing. No unrelated applications were closed. Peak working set includes Ollama and its worker processes, not total committed memory.
 
 The fixture set has six short translation requests (including a repeat) and one damaged OCR request, preserved with an `[Unclear OCR]` marker without inference. Warm statistics exclude the damaged input and first cold request. Timings include localhost/measurement overhead, not Deck OCR, Wi-Fi or rendering.
@@ -28,7 +55,7 @@ The fixture set has six short translation requests (including a repeat) and one 
 |---|---:|---:|---:|---|
 | Qwen3 0.6B | 2.74 s | 0.54–0.84 s | 0.81 GiB | Reversed “don't go alone” into “I'll go alone”; rejected as default |
 | Qwen3 1.7B | 5.42 s | 0.82–1.36 s | 1.59 GiB | Faster, but awkward phrasing and context errors |
-| Qwen3 4B | 10.44 s | 1.92–3.06 s | 2.72 GiB | Final default: context support and one model for both tasks |
+| Qwen3 4B | 10.44 s | 1.92–3.06 s | 2.72 GiB | Initial 0.1 default: context support and one model for both tasks |
 | TranslateGemma 4B | 11.49 s | 2.19–2.82 s | 3.40 GiB | Good short translations; documented prompt omits dialogue history |
 
 [Raw synthetic results](benchmarks/) include inputs, outputs, timing and memory; [summary.json](benchmarks/summary.json) contains computed statistics. Outputs were inspected for meaning, negation, incompleteness and invented information. This small qualitative comparison is not a formal accuracy score or native-speaker evaluation. Both 4B models inferred possessors for 約束 where Japanese leaves them implicit. Multi-region screens take longer because regions are translated sequentially.
@@ -67,6 +94,8 @@ A Japanese font is required (`--font` can select one). This Workbench's system M
 10. Start Immersion at 15 seconds and close QAM within two seconds. Static frames should skip OCR; repeated text should skip translation. New dialogue should update live subtitles without a frozen background or overlay appearing in the next capture. Test Steam/QAM menus for accidental recognition.
 11. Stop using its button, dismiss shortcut, plugin disable and game exit. No further captures should begin; an in-flight inference may finish but must not reopen the overlay. Test suspend/resume and game switches for stale context.
 12. Measure FPS, CPU, battery drain, network volume, OCR time and gateway latency for ten minutes. Increase polling interval if needed. These device measurements are outstanding.
+13. Upgrade the server and ZIP together. With Chrome Screen AI, choose Auto → English and test Japanese, Portuguese, Chinese and mixed-language screens. Confirm the detected-language notification and original text for uncertain short labels. Test explicit Indonesian → English and Japanese → Portuguese/Indonesian. Use RapidOCR with manual Portuguese/Indonesian and check accents, segmentation and box alignment. Language-specific OCR results on a Deck remain unverified.
+14. Change the language during Immersion or a pending request: polling must stop and the old result must not reopen the overlay. Restart and confirm the new output language. With Auto and Workbench disconnected, expect a manual-source requirement for NLLB, never a guessed fallback. Study must offer only Japanese regions and retain the selected output translation when saving.
 
 ## Remaining roadmap
 
@@ -76,6 +105,7 @@ A Japanese font is required (`--font` can select one). This Workbench's system M
 - Add optional local vision inference. Current image transmission supports explicit vocabulary screenshots only; translation remains text-only.
 - Improve multi-region latency with validated batch translation and tune polling from battery measurements.
 - Verify real AnkiConnect/media cards; add a history browser, dictionary sense selection and finer deletion controls.
+- Gather reviewed multilingual game dialogue, improve Indonesian/Malay disambiguation with explicit user hints, and validate OCR for each added language. Add dictionary-backed Study for other languages only with appropriate local resources.
 
 ## References
 

@@ -29,7 +29,7 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
         const id = ++requestId.current;
         setBusy(true); setMessage(explain ? 'Preparing local grammar explanation…' : 'Looking up local dictionary…');
         try {
-            const result = await call<[any], Analysis>('analyze_dross_sentence', { text: region.text, translation: region.englishTranslation || region.translatedText, context: snapshot.context, explain });
+            const result = await call<[any], Analysis>('analyze_dross_sentence', { text: region.text, source_language: 'ja', translation: region.drossTranslation || region.englishTranslation || region.translatedText, context: snapshot.context, explain });
             if (id !== requestId.current) return;
             if (result.error) { setMessage(result.message || 'Study request failed'); return; }
             setAnalysis(result); setMessage(result.dictionary_available ? '' : 'JMdict is not installed. Run Install-Study.ps1 on Workbench.');
@@ -50,7 +50,7 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
             const result = await call<[any], any>('save_dross_word', {
                 event_id: saveEvents.current.get(selection), word: token.surface, dictionary_form: token.dictionary_form,
                 reading: entries[0]?.reading || token.reading, meaning,
-                sentence: region.text, sentence_translation: region.englishTranslation || region.translatedText,
+                sentence: region.text, sentence_translation: region.drossTranslation || region.englishTranslation || region.translatedText,
                 game_id: snapshot.game_id,
                 sync_anki: syncAnki,
                 ...(includeImage && snapshot.image ? { screenshot_base64: snapshot.image.replace(/^data:image\/\w+;base64,/, '') } : {}),
@@ -65,7 +65,7 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
             <div style={{ fontSize: 13, opacity: 0.7 }}>Game: {snapshot.game_id} · D-pad selects · A activates · B returns</div>
             <Dropdown selectedOption={sentence} rgOptions={snapshot.regions.map((r, i) => ({ label: r.text, data: i }))} onChange={o => setSentence(o.data)} />
             <p style={{ fontSize: 23, lineHeight: 2.2 }}>{analysis?.tokens.map(t => <ruby key={t.id} style={{ marginRight: 3 }}>{t.surface}<rt style={{ fontSize: 12 }}>{t.reading !== t.surface ? t.reading : ''}</rt></ruby>) || region.text}</p>
-            <p>{region.englishTranslation || region.translatedText}</p>
+            <p>{region.drossTranslation || region.englishTranslation || region.translatedText}</p>
             {analysis && <Dropdown selectedOption={word} rgOptions={analysis.tokens.map((t, i) => ({ label: `${t.surface} · ${t.reading}`, data: i }))} onChange={o => setWord(o.data)} />}
             {token && <div style={{ margin: '12px 0', lineHeight: 1.5 }}>
                 <strong>{token.dictionary_form}</strong> · {entries[0]?.reading || token.reading} · {token.part_of_speech.join(' / ')}
@@ -89,6 +89,7 @@ const StudyOverlay: VFC<{ snapshot: Snapshot; closeModal?: () => void }> = ({ sn
 
 export async function openStudy(onDismissOverlay: () => void, image?: string) {
     const snapshot = await call<[], Snapshot>('get_dross_study_snapshot');
+    snapshot.regions = snapshot.regions.filter(r => r.drossSourceLanguage === 'ja' && !r.drossWarning);
     if (!snapshot.regions.length) return false;
     snapshot.image = image;
     onDismissOverlay();

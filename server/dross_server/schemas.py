@@ -1,5 +1,6 @@
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from .languages import normalize_language
 
 
 class StrictModel(BaseModel):
@@ -11,16 +12,30 @@ class Segment(StrictModel):
     text: str = Field(min_length=1, max_length=1500)
 
 
-class TranslateRequest(StrictModel):
+class DetectRequest(StrictModel):
     segments: list[Segment] = Field(min_length=1, max_length=24)
+
+
+class TranslateRequest(DetectRequest):
     context: list[str] = Field(default_factory=list, max_length=6)
-    source_language: Literal["ja"] = "ja"
-    target_language: Literal["en"] = "en"
+    source_language: str = Field(default='ja', max_length=16)
+    target_language: str = Field(default='en', max_length=16)
     game_id: str = Field(default="unknown", max_length=120)
     model_identity: str | None = Field(default=None, max_length=200)
 
+    @field_validator('source_language')
+    @classmethod
+    def source_supported(cls, value):
+        return normalize_language(value, allow_auto=True)
+
+    @field_validator('target_language')
+    @classmethod
+    def target_supported(cls, value):
+        return normalize_language(value)
+
 
 class AnalysisRequest(StrictModel):
+    source_language: Literal['ja'] = 'ja'
     text: str = Field(min_length=1, max_length=1500)
     translation: str = Field(default="", max_length=3000)
     context: list[str] = Field(default_factory=list, max_length=6)

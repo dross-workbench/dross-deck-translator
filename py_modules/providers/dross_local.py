@@ -11,6 +11,8 @@ from urllib.parse import urlsplit
 from .base import TranslationProvider, ProviderType, NetworkError, ApiKeyError
 from .translation_cache import TranslationCache
 
+DROSS_LANGUAGES = ('en', 'ja', 'ko', 'zh', 'zh-CN', 'zh-TW', 'es', 'fr', 'de', 'pt', 'id')
+
 DROSS_DEFAULTS = {
     "dross_server_url": "", "dross_token": "", "dross_certificate_sha256": "",
     "dross_timeout": 120, "dross_offline_fallback": False,
@@ -35,6 +37,9 @@ class DrossLocalProvider(TranslationProvider):
         self.last_texts = []
         self.last_context = []
         self.last_regions = []
+        self.language_pair = None
+        self.last_detections = {}
+        self.last_identity = None
         self.cache = TranslationCache(":memory:")
         self.lock = asyncio.Lock()
 
@@ -45,6 +50,7 @@ class DrossLocalProvider(TranslationProvider):
 
     def clear_session(self):
         self.context, self.last_texts, self.last_context, self.last_regions = [], [], [], []
+        self.last_detections, self.last_identity = {}, None
         self.cache.clear()
 
     def _request(self, method, path, payload=None, timeout=None):
@@ -105,6 +111,7 @@ class DrossLocalProvider(TranslationProvider):
                             "ollama_unavailable": "Start Ollama on Workbench.",
                             "inference_error": "Workbench cannot run the model. Check available RAM.",
                             "invalid_model_output": "The model returned an incomplete result. Try shorter dialogue."}
+                messages['detector_missing'] = 'Update Workbench server requirements and restart it to enable local language detection.'
                 raise NetworkError(messages.get(code, "Workbench request failed. Check server setup."))
             return data
         except (OSError, ValueError, http.client.HTTPException):
@@ -120,26 +127,27 @@ class DrossLocalProvider(TranslationProvider):
         return await self.request("GET", "/health")
 
     def is_available(self, source_lang="ja", target_lang="en"):
-        return bool(self.settings["dross_server_url"] and self.settings["dross_token"]) and source_lang in ("ja", "auto") and target_lang == "en"
+        return bool(self.settings['dross_server_url'] and self.settings['dross_token']) and source_lang in (*DROSS_LANGUAGES, 'auto') and target_lang in DROSS_LANGUAGES
 
     def get_supported_languages(self):
-        return ["ja", "en"]
+        return list(DROSS_LANGUAGES)
 
     async def translate(self, text, source_lang, target_lang):
         return (await self.translate_batch([text], source_lang, target_lang))[0]
 
     async def translate_batch(self, texts, source_lang, target_lang):
         regions = await self.translate_regions([{"text": t} for t in texts], source_lang, target_lang, "unknown")
-        return [r["englishTranslation"] for r in regions]
+        return [r['drossTranslation'] for r in regions]
 
     async def translate_regions(self, regions, source_lang, target_lang, game_id, persistent_cache=None, fallback=None):
-        if source_lang not in ("ja", "auto") or target_lang != "en":
-            raise NetworkError("Dross Local AI currently supports Japanese to English. Select Japanese and English.")
+        if source_lang not in (*DROSS_LANGUAGES, 'auto') or target_lang not in DROSS_LANGUAGES:
+            raise NetworkError('Choose a supported Dross input/output language in Translation settings.')
         async with self.lock:
             now = time.monotonic()
-            if game_id != self.game_id or now - self.last_seen > 900:
+            if game_id != self.game_id or (source_lang, target_lang) != self.language_pair or now - self.last_seen > 900:
                 self.clear_session()
                 self.game_id = game_id
+                self.language_pair = (source_lang, target_lang)
             self.last_seen = now
             texts = [r["text"] for r in regions]
             changed = texts != self.last_texts
@@ -155,47 +163,92 @@ class DrossLocalProvider(TranslationProvider):
                 identity = health.get("model_identity")
                 if not health.get("translation_available") or not identity:
                     raise NetworkError("Workbench translation model is not ready.")
-                scope = json.dumps([identity, game_id, context], ensure_ascii=False)
-                cached = cache.get_many(texts, "ja", "en", 0, namespace=scope)
-                missing = list(dict.fromkeys(t for t in texts if t not in cached and t.strip()))
-                if missing:
-                    data = await self.request("POST", "/v1/translate", {
-                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(missing)],
-                        "context": context, "game_id": game_id, "model_identity": identity,
-                        "source_language": "ja", "target_language": "en"})
-                    items = data.get("segments", [])
-                    try:
-                        result = {r["id"]: r["translation"] for r in items}
-                    except (KeyError, TypeError):
-                        raise NetworkError("Workbench returned invalid sentence mappings.")
-                    if len(items) != len(missing) or set(result) != {str(i) for i in range(len(missing))} or any(not isinstance(v, str) or not v.strip() for v in result.values()):
-                        raise NetworkError("Workbench returned invalid sentence mappings.")
-                    pairs = [(t, result[str(i)]) for i, t in enumerate(missing)]
-                    cache.put_many(pairs, "ja", "en", 0, "dross", namespace=scope)
-                    cached.update(pairs)
-                translations = [cached.get(t, t) for t in texts]
+                if source_lang not in health.get('source_languages', ['ja']) or target_lang not in health.get('target_languages', ['en']):
+                    raise NetworkError('Update Workbench to the multilingual server build for this language selection.')
+                scope = json.dumps([identity, game_id, source_lang, target_lang, context], ensure_ascii=False)
+                unique = list(dict.fromkeys(t for t in texts if t.strip()))
+                if not unique:
+                    detections = {}
+                elif source_lang == 'auto':
+                    if not health.get('automatic_detection'):
+                        raise NetworkError('Update Workbench to enable automatic language detection.')
+                    if not changed and self.last_identity == identity and self.last_detections:
+                        detections = self.last_detections
+                    else:
+                        data = await self.request('POST', '/v1/detect', {'segments': [{'id': str(i), 'text': t} for i, t in enumerate(unique)]})
+                        items = data.get('segments', [])
+                        try:
+                            mapped = {item['id']: item for item in items}
+                            if len(items) != len(unique) or set(mapped) != {str(i) for i in range(len(unique))}:
+                                raise ValueError()
+                            detections = {t: mapped[str(i)] for i, t in enumerate(unique)}
+                            for item in detections.values():
+                                if item['status'] not in ('detected', 'uncertain', 'unsupported', 'non_linguistic') or (item['status'] == 'detected' and item['language'] not in DROSS_LANGUAGES):
+                                    raise ValueError()
+                        except (KeyError, TypeError, ValueError):
+                            raise NetworkError('Workbench returned invalid language detections.')
+                else:
+                    detections = {t: {'language': source_lang, 'status': 'detected', 'confidence': None} for t in unique}
+                translated = {t: t for t in texts}
+                for language in dict.fromkeys(d['language'] for d in detections.values() if d['status'] == 'detected'):
+                    group = [t for t in unique if detections[t]['status'] == 'detected' and detections[t]['language'] == language]
+                    if language == target_lang:
+                        continue
+                    cached = cache.get_many(group, language, target_lang, 0, namespace=scope)
+                    missing = [t for t in group if t not in cached]
+                    if missing:
+                        data = await self.request('POST', '/v1/translate', {
+                            'segments': [{'id': str(i), 'text': t} for i, t in enumerate(missing)],
+                            'context': context, 'game_id': game_id, 'model_identity': identity,
+                            'source_language': language, 'target_language': target_lang})
+                        items = data.get('segments', [])
+                        try:
+                            mapped = {r['id']: r['translation'] for r in items}
+                        except (KeyError, TypeError):
+                            raise NetworkError('Workbench returned invalid sentence mappings.')
+                        if len(items) != len(missing) or set(mapped) != {str(i) for i in range(len(missing))} or any(not isinstance(v, str) or not v.strip() for v in mapped.values()):
+                            raise NetworkError('Workbench returned invalid sentence mappings.')
+                        pairs = [(t, mapped[str(i)]) for i, t in enumerate(missing)]
+                        cache.put_many(pairs, language, target_lang, 0, 'dross', namespace=scope)
+                        cached.update(pairs)
+                    translated.update(cached)
+                translations = [translated[t] for t in texts]
+                self.last_detections, self.last_identity = detections, identity
             except NetworkError:
-                if not self.settings["dross_offline_fallback"] or fallback is None or not fallback.is_available("ja", "en"):
+                if not self.settings['dross_offline_fallback'] or fallback is None:
                     raise
-                translations = await fallback.translate_batch(texts, "ja", "en")
+                if source_lang == 'auto':
+                    raise NetworkError('Workbench is unavailable. Select an explicit input language to use on-device NLLB fallback.')
+                if not fallback.is_available(source_lang, target_lang):
+                    raise
+                translations = await fallback.translate_batch(texts, source_lang, target_lang)
                 if len(translations) != len(texts) or any(t is None for t in translations):
                     raise NetworkError("On-device fallback failed. Download the NLLB model in Translation settings.")
                 fallback_used = True
+                detections = {t: {'language': source_lang, 'status': 'detected', 'confidence': None} for t in texts}
             self.last_context, self.last_texts = context[:], texts[:]
             for t in texts:
                 if t.strip() and (not self.context or self.context[-1] != t):
                     self.context.append(t)
             self.context = self.context[-count:] if count else []
             mode = self.settings["dross_display_mode"]
-            result = [{**r, "englishTranslation": t,
-                       "translatedText": r["text"] if mode == "japanese" else f"{r['text']}\n{t}" if mode == "bilingual" else t,
-                       "drossFallback": fallback_used} for r, t in zip(regions, translations)]
+            result = []
+            for region, translation in zip(regions, translations):
+                detected = detections.get(region['text'], {})
+                result.append({**region, 'drossTranslation': translation,
+                    **({'englishTranslation': translation} if target_lang == 'en' else {}),
+                    'translatedText': region['text'] if mode in ('japanese', 'source') else f"{region['text']}\n{translation}" if mode == 'bilingual' else translation,
+                    'drossSourceLanguage': detected.get('language', source_lang), 'drossTargetLanguage': target_lang,
+                    'drossDetectionConfidence': detected.get('confidence'),
+                    'drossWarning': detected.get('reason') if detected.get('status') in ('uncertain', 'unsupported') else None,
+                    'drossFallback': fallback_used})
             self.last_regions = result
-            if changed and newly_seen and not fallback_used and self.settings["dross_track_encounters"]:
+            japanese_new = [t for t in newly_seen if detections.get(t, {}).get('language') == 'ja']
+            if changed and japanese_new and not fallback_used and self.settings["dross_track_encounters"]:
                 try:
                     await self.request("POST", "/v1/vocabulary/encounters", {
                         "event_id": str(uuid.uuid4()), "game_id": game_id,
-                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(newly_seen) if t.strip()]}, timeout=2)
+                        "segments": [{"id": str(i), "text": t} for i, t in enumerate(japanese_new) if t.strip()]}, timeout=2)
                 except (NetworkError, ApiKeyError):
                     # Optional history must never prevent a translated overlay.
                     pass

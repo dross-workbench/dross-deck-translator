@@ -4,6 +4,49 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const ts = require('typescript');
 
+function loadModule(path, requireFn) {
+    const context = {exports: {}, require: requireFn};
+    vm.runInNewContext(ts.transpileModule(fs.readFileSync(path, 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020}}).outputText, context);
+    return context.exports;
+}
+
+test('Dross language controls advertise Portuguese and Indonesian and respect legacy gateways', () => {
+    const {drossLanguageChoices, languageName} = loadModule('src/DrossLanguages.ts');
+    const offline = drossLanguageChoices();
+    assert(offline.source.includes('auto') && offline.source.includes('id') && offline.target.includes('pt'));
+    assert.equal(languageName('id'), 'Indonesian'); assert.equal(languageName('pt'), 'Portuguese');
+    const legacy = drossLanguageChoices({status: 'ok'});
+    assert.deepEqual(Array.from(legacy.source), ['ja']); assert.deepEqual(Array.from(legacy.target), ['en']);
+    const advertised = drossLanguageChoices({status: 'ok', source_languages: ['auto', 'id'], target_languages: ['pt']});
+    assert.deepEqual(Array.from(advertised.source), ['auto', 'id']);
+    assert.deepEqual(Array.from(advertised.target), ['pt']);
+});
+
+test('changing language stops immersion before an unchanged frame can reuse an old translation', () => {
+    // Arrow methods are initialized by the constructor; use lightweight collaborators.
+    const calls = [];
+    class Input { onShortcutPressed() {} onProgress() {} setEnabled() {} }
+    class TextTranslator {
+        constructor() { this.source = 'ja'; this.target = 'en'; }
+        getInputLanguage() { return this.source; } getTargetLanguage() { return this.target; }
+        setInputLanguage(v) { calls.push(['source', v]); this.source = v; }
+        setTargetLanguage(v) { calls.push(['target', v]); this.target = v; }
+    }
+    const mod = loadModule('src/Translator.tsx', name => {
+        if (name === '@decky/api') return {call: async () => true};
+        if (name === './Input') return {Input};
+        if (name === './TextTranslator') return {TextTranslator};
+        if (name === './TextRecognizer') return {TextRecognizer: class {}};
+        if (name === './ImmersionLoop') return {ImmersionLoop: class { active = true; }};
+        if (name === './Logger') return {logger: new Proxy({}, {get: () => () => {}})};
+        return {};
+    });
+    const instance = new mod.GameTranslatorLogic({onStateChanged() {}});
+    instance.stopImmersion = () => calls.push(['stop']);
+    instance.setTargetLanguage('pt'); instance.setInputLanguage('id'); instance.setInputLanguage('id');
+    assert.deepEqual(calls, [['stop'], ['target', 'pt'], ['stop'], ['source', 'id'], ['source', 'id']]);
+});
+
 function scheduler() {
     const tasks = new Map(); let next = 0;
     const context = { exports: {}, setTimeout: (fn, ms) => { const id = ++next; tasks.set(id, {fn, ms}); return id; }, clearTimeout: id => tasks.delete(id) };
